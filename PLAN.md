@@ -29,11 +29,11 @@ field that gets sent to the summarization prompt.
 
 - [x] Scaffold Next.js 16 project (Bun, TypeScript, Tailwind v4, shadcn/ui)
 - [x] Set up Prisma v7 with `@prisma/adapter-neon`
-- [ ] Connect Neon PostgreSQL and run the initial migration
+- [x] Connect Neon PostgreSQL and run the initial migration
 - [x] Define `IncidentLog` model (see schema below)
 - [x] Build Quick Log Entry form (title, severity, systemArea, description, tags)
 - [x] Build Incident List page (table/cards, sorted by date, filter by severity)
-- [ ] Deploy to Vercel (early, so it's usable on mobile from day one) (ยังไม่ต้อง deploy on vercel)
+- [ ] Deploy to Vercel (deferred by choice; ยังไม่ต้อง deploy on vercel)
 
 **Exit criteria**: Can open the site on phone, log an incident in <30s, see it in the list.
 
@@ -45,11 +45,11 @@ field that gets sent to the summarization prompt.
 
 - [ ] Get Gemini API key (Google AI Studio, no credit card needed)
 - [ ] Store `GEMINI_API_KEY` in Vercel env vars
-- [ ] Build `lib/gemini.ts` — wrapper function to call Gemini API
-- [ ] Write and iterate on summarization prompt (see prompt template below)
-- [ ] Build "Generate Summary" button → calls server action → shows result
-- [ ] Store generated summaries in `WeeklySummary` model
-- [ ] Add manual review/edit step before "finalizing" a summary (never auto-send unreviewed AI output)
+- [x] Build `lib/gemini.ts` — wrapper function to call Gemini API
+- [x] Write and iterate on summarization prompt (see prompt template below)
+- [x] Build "Generate Summary" button → calls server action → shows result
+- [x] Store generated summaries in `WeeklySummary` model
+- [x] Add manual review/edit step before "finalizing" a summary (never auto-send unreviewed AI output)
 
 **Exit criteria**: Select a date range → get a draft report → edit if needed → save.
 

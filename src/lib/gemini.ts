@@ -1,0 +1,77 @@
+import "server-only";
+
+import { GoogleGenAI } from "@google/genai";
+
+import { buildSummaryPrompt } from "@/lib/summary-prompt";
+import type { GenerateSummaryInput } from "@/lib/summaries";
+
+const GEMINI_MODEL = "gemini-3.6-flash";
+
+export class GeminiConfigurationError extends Error {
+  constructor() {
+    super("Add GEMINI_API_KEY to .env before generating a report.");
+    this.name = "GeminiConfigurationError";
+  }
+}
+
+export class GeminiRateLimitError extends Error {
+  constructor() {
+    super(
+      "Gemini is rate-limited right now. Wait a minute, then generate the draft again.",
+    );
+    this.name = "GeminiRateLimitError";
+  }
+}
+
+export class GeminiResponseError extends Error {
+  constructor() {
+    super("Gemini returned an empty report. Try generating the draft again.");
+    this.name = "GeminiResponseError";
+  }
+}
+
+function isRateLimitError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+
+  return (
+    ("status" in error && error.status === 429) ||
+    ("message" in error &&
+      typeof error.message === "string" &&
+      /\b429\b|resource_exhausted|rate limit/i.test(error.message))
+  );
+}
+
+export async function generateWeeklySummary(
+  input: GenerateSummaryInput,
+): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) throw new GeminiConfigurationError();
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: buildSummaryPrompt(input),
+      config: {
+        temperature: 0.2,
+      },
+    });
+    const text = response.text?.trim();
+
+    if (!text) throw new GeminiResponseError();
+    return text;
+  } catch (error: unknown) {
+    if (
+      error instanceof GeminiConfigurationError ||
+      error instanceof GeminiResponseError
+    ) {
+      throw error;
+    }
+    if (isRateLimitError(error)) throw new GeminiRateLimitError();
+
+    console.error("Gemini summary generation failed", error);
+    throw new Error(
+      "Gemini could not generate the report. Your reviewed incident text was not saved or finalized.",
+    );
+  }
+}

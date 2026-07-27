@@ -8,6 +8,8 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const parsedFilters = incidentFilterSchema.safeParse({
     severity: request.nextUrl.searchParams.get("severity") || undefined,
+    start: request.nextUrl.searchParams.get("start") || undefined,
+    end: request.nextUrl.searchParams.get("end") || undefined,
   });
 
   if (!parsedFilters.success) {
@@ -18,10 +20,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
+    const { severity, start, end } = parsedFilters.data;
     const incidents = await getDb().incidentLog.findMany({
-      where: parsedFilters.data.severity
-        ? { severity: parsedFilters.data.severity }
-        : undefined,
+      where: {
+        severity,
+        createdAt:
+          start && end
+            ? {
+                gte: new Date(`${start}T00:00:00.000Z`),
+                lte: new Date(`${end}T23:59:59.999Z`),
+              }
+            : undefined,
+      },
       orderBy: { createdAt: "desc" },
     });
 

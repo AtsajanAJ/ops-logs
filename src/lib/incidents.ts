@@ -48,9 +48,28 @@ export const incidentInputSchema = z.object({
     .transform(parseTags),
 });
 
-export const incidentFilterSchema = z.object({
-  severity: z.enum(severityValues).optional(),
-});
+export const incidentFilterSchema = z
+  .object({
+    severity: z.enum(severityValues).optional(),
+    start: z.iso.date().optional(),
+    end: z.iso.date().optional(),
+  })
+  .superRefine((filters, context) => {
+    if (Boolean(filters.start) !== Boolean(filters.end)) {
+      context.addIssue({
+        code: "custom",
+        message: "Start and end dates must be provided together.",
+      });
+    }
+
+    if (filters.start && filters.end && filters.start > filters.end) {
+      context.addIssue({
+        code: "custom",
+        message: "The end date must be on or after the start date.",
+        path: ["end"],
+      });
+    }
+  });
 
 export interface IncidentView {
   id: string;

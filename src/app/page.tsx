@@ -1,5 +1,4 @@
-import { Activity, ShieldCheck } from "lucide-react";
-
+import { AppHeader } from "@/components/app-header";
 import { IncidentForm } from "@/components/incident-form";
 import { IncidentList } from "@/components/incident-list";
 import {
@@ -13,27 +12,7 @@ import {
 export default function Home(): React.JSX.Element {
   return (
     <main className="min-h-screen">
-      <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-[90rem] items-center justify-between px-4 py-4 sm:px-6 lg:px-10">
-          <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-lg bg-slate-950 text-white">
-              <Activity aria-hidden="true" className="size-4.5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold tracking-tight text-slate-950">
-                Ops Logs
-              </p>
-              <p className="font-mono text-[0.62rem] font-semibold tracking-[0.16em] text-slate-500 uppercase">
-                Personal operations desk
-              </p>
-            </div>
-          </div>
-          <div className="hidden items-center gap-2 font-mono text-[0.65rem] font-semibold tracking-[0.12em] text-slate-500 uppercase sm:flex">
-            <ShieldCheck aria-hidden="true" className="size-3.5 text-emerald-600" />
-            Single-user workspace
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 sm:py-10 lg:px-10 lg:py-14">
         <div className="mb-9 max-w-2xl">
