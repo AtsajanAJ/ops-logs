@@ -4,6 +4,7 @@ import {
   incidentFilterSchema,
   incidentInputSchema,
   parseTags,
+  resolveIncidentSchema,
 } from "./incidents";
 
 describe("incident validation", () => {
@@ -40,6 +41,49 @@ describe("incident validation", () => {
   it("rejects invalid severity filters", () => {
     expect(
       incidentFilterSchema.safeParse({ severity: "EMERGENCY" }).success,
+    ).toBe(false);
+  });
+
+  it("accepts combined knowledge-base filters", () => {
+    expect(
+      incidentFilterSchema.parse({
+        severity: "CRITICAL",
+        query: "network timeout",
+        tag: "vpn",
+        systemArea: "Site A",
+      }),
+    ).toEqual({
+      severity: "CRITICAL",
+      query: "network timeout",
+      tag: "vpn",
+      systemArea: "Site A",
+    });
+  });
+
+  it("rejects overlong search input", () => {
+    expect(
+      incidentFilterSchema.safeParse({ query: "x".repeat(101) }).success,
+    ).toBe(false);
+  });
+
+  it("requires a resolution while allowing an unknown root cause", () => {
+    expect(
+      resolveIncidentSchema.parse({
+        id: "incident-1",
+        rootCause: " ",
+        resolution: "Restarted the affected service.",
+      }),
+    ).toEqual({
+      id: "incident-1",
+      rootCause: null,
+      resolution: "Restarted the affected service.",
+    });
+    expect(
+      resolveIncidentSchema.safeParse({
+        id: "incident-1",
+        rootCause: "",
+        resolution: "",
+      }).success,
     ).toBe(false);
   });
 });

@@ -2,6 +2,10 @@ import "server-only";
 
 import { GoogleGenAI } from "@google/genai";
 
+import {
+  getGeminiRetryDelay,
+  isTransientGeminiError,
+} from "@/lib/gemini-retry";
 import { buildSummaryPrompt } from "@/lib/summary-prompt";
 import type { GenerateSummaryInput } from "@/lib/summaries";
 
@@ -17,7 +21,7 @@ export class GeminiConfigurationError extends Error {
 export class GeminiRateLimitError extends Error {
   constructor() {
     super(
-      "Gemini is rate-limited right now. Wait a minute, then generate the draft again.",
+      "Gemini is busy or rate-limited after several retries. Wait a minute, then generate the draft again.",
     );
     this.name = "GeminiRateLimitError";
   }
@@ -30,15 +34,8 @@ export class GeminiResponseError extends Error {
   }
 }
 
-function isRateLimitError(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-
-  return (
-    ("status" in error && error.status === 429) ||
-    ("message" in error &&
-      typeof error.message === "string" &&
-      /\b429\b|resource_exhausted|rate limit/i.test(error.message))
-  );
+async function wait(milliseconds: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 export async function generateWeeklySummary(
@@ -47,31 +44,38 @@ export async function generateWeeklySummary(
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new GeminiConfigurationError();
 
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: buildSummaryPrompt(input),
-      config: {
-        temperature: 0.2,
-      },
-    });
-    const text = response.text?.trim();
+  const ai = new GoogleGenAI({ apiKey });
 
-    if (!text) throw new GeminiResponseError();
-    return text;
-  } catch (error: unknown) {
-    if (
-      error instanceof GeminiConfigurationError ||
-      error instanceof GeminiResponseError
-    ) {
-      throw error;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await ai.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: buildSummaryPrompt(input),
+        config: {
+          temperature: 0.2,
+        },
+      });
+      const text = response.text?.trim();
+
+      if (!text) throw new GeminiResponseError();
+      return text;
+    } catch (error: unknown) {
+      if (error instanceof GeminiResponseError) throw error;
+
+      if (isTransientGeminiError(error)) {
+        if (attempt < 2) {
+          await wait(getGeminiRetryDelay(attempt));
+          continue;
+        }
+        throw new GeminiRateLimitError();
+      }
+
+      console.error("Gemini summary generation failed", error);
+      throw new Error(
+        "Gemini could not generate the report. Your reviewed incident text was not saved or finalized.",
+      );
     }
-    if (isRateLimitError(error)) throw new GeminiRateLimitError();
-
-    console.error("Gemini summary generation failed", error);
-    throw new Error(
-      "Gemini could not generate the report. Your reviewed incident text was not saved or finalized.",
-    );
   }
+
+  throw new GeminiRateLimitError();
 }

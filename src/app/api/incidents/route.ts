@@ -10,6 +10,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     severity: request.nextUrl.searchParams.get("severity") || undefined,
     start: request.nextUrl.searchParams.get("start") || undefined,
     end: request.nextUrl.searchParams.get("end") || undefined,
+    query: request.nextUrl.searchParams.get("query") || undefined,
+    tag: request.nextUrl.searchParams.get("tag") || undefined,
+    systemArea: request.nextUrl.searchParams.get("systemArea") || undefined,
   });
 
   if (!parsedFilters.success) {
@@ -20,10 +23,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const { severity, start, end } = parsedFilters.data;
+    const { severity, start, end, query, tag, systemArea } =
+      parsedFilters.data;
     const incidents = await getDb().incidentLog.findMany({
       where: {
         severity,
+        tags: tag ? { has: tag } : undefined,
+        systemArea: systemArea
+          ? { equals: systemArea, mode: "insensitive" }
+          : undefined,
         createdAt:
           start && end
             ? {
@@ -31,6 +39,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 lte: new Date(`${end}T23:59:59.999Z`),
               }
             : undefined,
+        OR: query
+          ? [
+              { title: { contains: query, mode: "insensitive" } },
+              { description: { contains: query, mode: "insensitive" } },
+              { systemArea: { contains: query, mode: "insensitive" } },
+              { tags: { has: query.toLowerCase() } },
+            ]
+          : undefined,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -42,8 +58,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       severity: incident.severity,
       systemArea: incident.systemArea,
       resolved: incident.resolved,
+      rootCause: incident.rootCause,
+      resolution: incident.resolution,
       tags: incident.tags,
       createdAt: incident.createdAt.toISOString(),
+      resolvedAt: incident.resolvedAt?.toISOString() ?? null,
     }));
 
     return NextResponse.json(data);

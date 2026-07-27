@@ -111,11 +111,18 @@ function PrivacyEditor({
   useEffect(() => {
     if (state.status !== "success") return;
     void queryClient.invalidateQueries({ queryKey: ["summaries"] });
+    void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
   }, [queryClient, state]);
 
   function updateIncident(
     index: number,
-    field: "title" | "description" | "systemArea" | "tags",
+    field:
+      | "title"
+      | "description"
+      | "systemArea"
+      | "rootCause"
+      | "resolution"
+      | "tags",
     value: string,
   ): void {
     setIncidents((current) =>
@@ -128,7 +135,12 @@ function PrivacyEditor({
 
         return {
           ...incident,
-          [field]: field === "systemArea" ? value || null : value,
+          [field]:
+            field === "systemArea" ||
+            field === "rootCause" ||
+            field === "resolution"
+              ? value || null
+              : value,
         };
       }),
     );
@@ -236,6 +248,39 @@ function PrivacyEditor({
                   updateIncident(index, "tags", event.target.value)
                 }
               />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor={`safe-root-cause-${incident.id}`}>
+                  Safe root cause
+                </Label>
+                <Textarea
+                  id={`safe-root-cause-${incident.id}`}
+                  value={incident.rootCause ?? ""}
+                  maxLength={2_000}
+                  rows={3}
+                  placeholder="Not yet determined"
+                  onChange={(event) =>
+                    updateIncident(index, "rootCause", event.target.value)
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor={`safe-resolution-${incident.id}`}>
+                  Safe resolution
+                </Label>
+                <Textarea
+                  id={`safe-resolution-${incident.id}`}
+                  value={incident.resolution ?? ""}
+                  maxLength={2_000}
+                  rows={3}
+                  placeholder="Not yet determined"
+                  onChange={(event) =>
+                    updateIncident(index, "resolution", event.target.value)
+                  }
+                />
+              </div>
             </div>
           </fieldset>
         ))}

@@ -1,20 +1,23 @@
 # PLAN.md — AI-Assisted Incident Log + Auto-Summary
 
 ## 🎯 Goal
+
 Personal tool to log operational incidents quickly, then use Gemini API to auto-generate
 weekly summary reports (for HQ) and build a searchable personal knowledge base.
 
 ## 🧱 Tech Stack
+
 - Next.js 16 (App Router) + TypeScript
 - Tailwind CSS v4 + shadcn/ui
 - Prisma v7 (`@prisma/adapter-neon`; connection URL in `prisma.config.ts`)
 - Neon PostgreSQL
 - TanStack Query v5
 - Bun (package manager)
-- Google Gemini API (`gemini-2.5-flash`) for summarization — free tier
+- Google Gemini API (`gemini-3.6-flash`) for summarization — free tier
 - Vercel (hosting + Cron Jobs for weekly auto-summary)
 
 ## ⚠️ Data Sensitivity Rule (read before building anything)
+
 This tool may reference hospital/customer incidents. Never send real patient data,
 hospital names, or identifying details to the Gemini free tier (data may be used for
 model training). Always mask/anonymize sensitive fields before calling the AI —
@@ -22,6 +25,8 @@ use generic labels like "Site A", "Client B" instead of real names in any `descr
 field that gets sent to the summarization prompt.
 
 ---
+
+
 
 ## Phase 1 — MVP: Core Logging (Week 1)
 
@@ -39,11 +44,13 @@ field that gets sent to the summarization prompt.
 
 ---
 
+
+
 ## Phase 2 — AI Summarization (Week 2)
 
 **Goal**: Generate a readable weekly report on demand.
 
-- [ ] Get Gemini API key (Google AI Studio, no credit card needed)
+- [x] Get Gemini API key (Google AI Studio, no credit card needed)
 - [ ] Store `GEMINI_API_KEY` in Vercel env vars
 - [x] Build `lib/gemini.ts` — wrapper function to call Gemini API
 - [x] Write and iterate on summarization prompt (see prompt template below)
@@ -55,32 +62,39 @@ field that gets sent to the summarization prompt.
 
 ---
 
+
+
 ## Phase 3 — Automation + Knowledge Base (Week 3)
 
 **Goal**: Reduce manual work further, make old incidents searchable.
 
-- [ ] Add Vercel Cron Job — auto-generate draft summary every Monday 8am
-- [ ] Add notification (email or simple in-app banner) when draft is ready for review
-- [ ] Add full-text search on `IncidentLog` (Postgres `ILIKE` or `tsvector`, keep it simple)
-- [ ] Add filter by tag / systemArea / severity on the log list
-- [ ] Add simple dashboard: incidents per week, severity breakdown (Recharts)
+- [ ] Add Vercel Cron Job — deferred; automation must not bypass anonymization review
+- [x] Add notification (email or simple in-app banner) when draft is ready for review
+- [x] Add full-text search on `IncidentLog` (Postgres `ILIKE` or `tsvector`, keep it simple)
+- [x] Add filter by tag / systemArea / severity on the log list
+- [x] Add simple dashboard: incidents per week, severity breakdown (Recharts)
 
 **Exit criteria**: Tool runs mostly hands-off — you just log incidents; summaries appear automatically for review.
 
 ---
 
+
+
 ## Phase 4 — Production Hardening (Week 4, before relying on it daily)
 
-- [ ] Add basic auth (single-user — NextAuth.js or a simple password gate, since this is personal)
-- [ ] Add data export (CSV/JSON) — don't lock your own data in
-- [ ] Add error handling + loading states everywhere (no silent failures)
-- [ ] Add rate-limit awareness for Gemini free tier (queue/backoff if 429 hit)
-- [ ] Write a short README for future-you (how to run, deploy, rotate API key)
+- [ ] Add basic auth (deferred while the app remains local-only)
+- [x] Add incident resolution workflow (root cause, resolution, resolve/reopen)
+- [x] Add data export (CSV/JSON) — don't lock your own data in
+- [x] Add error handling + loading states everywhere (no silent failures)
+- [x] Add rate-limit awareness for Gemini free tier (bounded backoff for 429/503)
+- [x] Write a short README for future-you (how to run, deploy, rotate API key)
 - [ ] Backup strategy: Neon has point-in-time restore — confirm retention window is enough
 
 **Exit criteria**: You'd trust this tool to hold a real record of your work without babysitting it.
 
 ---
+
+
 
 ## 📐 Data Model (Prisma)
 
@@ -117,6 +131,8 @@ enum Severity {
 }
 ```
 
+
+
 ## 🧠 Gemini Prompt Template (starting point — iterate on this)
 
 ```
@@ -135,7 +151,10 @@ Write a report with these sections:
 Do not invent details not present in the logs. If root cause is missing, say "not yet determined".
 ```
 
+
+
 ## 🚀 Deployment Checklist (before first real production use)
+
 - [ ] Env vars set on Vercel: `DATABASE_URL`, `GEMINI_API_KEY`
 - [ ] Prisma migration run against Neon production branch
 - [ ] Cron job schedule confirmed in `vercel.json`

@@ -1,11 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Inbox, RefreshCw } from "lucide-react";
+import {
+  AlertTriangle,
+  Inbox,
+  RefreshCw,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { IncidentLifecycleDialog } from "@/components/incident-lifecycle-dialog";
 import {
   Select,
   SelectContent,
@@ -15,12 +24,21 @@ import {
 } from "@/components/ui/select";
 import {
   severityValues,
+  type IncidentFacets,
   type IncidentView,
   type SeverityValue,
 } from "@/lib/incidents";
 import { cn } from "@/lib/utils";
 
 type SeverityFilter = SeverityValue | "ALL";
+type FacetFilter = string | "ALL";
+
+interface IncidentFilters {
+  severity: SeverityFilter;
+  tag: FacetFilter;
+  systemArea: FacetFilter;
+  query: string;
+}
 
 const severityLabels: Record<SeverityValue, string> = {
   LOW: "Low",
@@ -49,10 +67,17 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 });
 
 async function fetchIncidents(
-  severity: SeverityFilter,
+  filters: IncidentFilters,
 ): Promise<IncidentView[]> {
   const params = new URLSearchParams();
-  if (severity !== "ALL") params.set("severity", severity);
+  if (filters.severity !== "ALL") {
+    params.set("severity", filters.severity);
+  }
+  if (filters.tag !== "ALL") params.set("tag", filters.tag);
+  if (filters.systemArea !== "ALL") {
+    params.set("systemArea", filters.systemArea);
+  }
+  if (filters.query) params.set("query", filters.query);
 
   const response = await fetch(`/api/incidents?${params.toString()}`);
   const payload: unknown = await response.json();
@@ -69,6 +94,24 @@ async function fetchIncidents(
   }
 
   return payload as IncidentView[];
+}
+
+async function fetchIncidentFacets(): Promise<IncidentFacets> {
+  const response = await fetch("/api/incidents/facets");
+  const payload: unknown = await response.json();
+
+  if (!response.ok) {
+    const message =
+      typeof payload === "object" &&
+      payload !== null &&
+      "message" in payload &&
+      typeof payload.message === "string"
+        ? payload.message
+        : "Incident filters could not be loaded.";
+    throw new Error(message);
+  }
+
+  return payload as IncidentFacets;
 }
 
 function IncidentSkeleton(): React.JSX.Element {
@@ -122,11 +165,19 @@ function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
             <h3 className="text-base leading-6 font-semibold text-slate-950">
               {incident.title}
             </h3>
-            {incident.systemArea && (
-              <span className="font-mono text-[0.68rem] font-semibold tracking-[0.08em] text-slate-500 uppercase">
-                {incident.systemArea}
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {incident.resolved && (
+                <Badge className="bg-emerald-100 text-emerald-800">
+                  Resolved
+                </Badge>
+              )}
+              {incident.systemArea && (
+                <span className="font-mono text-[0.68rem] font-semibold tracking-[0.08em] text-slate-500 uppercase">
+                  {incident.systemArea}
+                </span>
+              )}
+              <IncidentLifecycleDialog incident={incident} />
+            </div>
           </div>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
             {incident.description}
@@ -152,14 +203,41 @@ function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
 
 export function IncidentList(): React.JSX.Element {
   const [severity, setSeverity] = useState<SeverityFilter>("ALL");
+  const [tag, setTag] = useState<FacetFilter>("ALL");
+  const [systemArea, setSystemArea] = useState<FacetFilter>("ALL");
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query.trim());
+  const filters: IncidentFilters = {
+    severity,
+    tag,
+    systemArea,
+    query: deferredQuery,
+  };
   const incidentsQuery = useQuery({
-    queryKey: ["incidents", { severity }],
-    queryFn: () => fetchIncidents(severity),
+    queryKey: ["incidents", filters],
+    queryFn: () => fetchIncidents(filters),
   });
+  const facetsQuery = useQuery({
+    queryKey: ["incident-facets"],
+    queryFn: fetchIncidentFacets,
+  });
+  const activeFilterCount = [
+    severity !== "ALL",
+    tag !== "ALL",
+    systemArea !== "ALL",
+    Boolean(query.trim()),
+  ].filter(Boolean).length;
+
+  function clearFilters(): void {
+    setSeverity("ALL");
+    setTag("ALL");
+    setSystemArea("ALL");
+    setQuery("");
+  }
 
   return (
     <section aria-labelledby="incident-ledger-title">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-5">
         <div>
           <p className="font-mono text-[0.68rem] font-semibold tracking-[0.16em] text-slate-500 uppercase">
             Recorded events
@@ -177,8 +255,22 @@ export function IncidentList(): React.JSX.Element {
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-500">Show</span>
+        <div className="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(13rem,1fr)_repeat(3,minmax(8rem,0.55fr))_auto]">
+          <div className="relative sm:col-span-2 xl:col-span-1">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
+            />
+            <Input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search incidents…"
+              aria-label="Search incidents"
+              className="h-9 bg-white pl-9"
+            />
+          </div>
+
           <Select
             value={severity}
             onValueChange={(value) =>
@@ -187,7 +279,7 @@ export function IncidentList(): React.JSX.Element {
           >
             <SelectTrigger
               aria-label="Filter by severity"
-              className="h-9! w-36 bg-white"
+              className="h-9! w-full bg-white"
             >
               <SelectValue>
                 {(value) =>
@@ -206,6 +298,73 @@ export function IncidentList(): React.JSX.Element {
               ))}
             </SelectContent>
           </Select>
+
+          <Select
+            value={systemArea}
+            onValueChange={(value) => setSystemArea(value ?? "ALL")}
+          >
+            <SelectTrigger
+              aria-label="Filter by system area"
+              className="h-9! w-full bg-white"
+            >
+              <SelectValue>
+                {(value) =>
+                  value === "ALL" ? "All system areas" : String(value)
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All system areas</SelectItem>
+              {facetsQuery.data?.systemAreas.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={tag} onValueChange={(value) => setTag(value ?? "ALL")}>
+            <SelectTrigger
+              aria-label="Filter by tag"
+              className="h-9! w-full bg-white"
+            >
+              <SelectValue>
+                {(value) => (value === "ALL" ? "All tags" : `#${String(value)}`)}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All tags</SelectItem>
+              {facetsQuery.data?.tags.map((value) => (
+                <SelectItem key={value} value={value}>
+                  #{value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            disabled={activeFilterCount === 0}
+            className="h-9 justify-center text-slate-600"
+          >
+            <X aria-hidden="true" />
+            Clear
+          </Button>
+        </div>
+
+        <div className="mt-2 flex min-h-5 items-center gap-2 text-xs text-slate-500">
+          <SlidersHorizontal aria-hidden="true" className="size-3.5" />
+          {activeFilterCount > 0
+            ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
+            : "Search title, description, system area, or an exact tag"}
+          {facetsQuery.isError && (
+            <span className="font-medium text-red-700">
+              · {facetsQuery.error.message}
+            </span>
+          )}
         </div>
       </div>
 
@@ -240,7 +399,9 @@ export function IncidentList(): React.JSX.Element {
             No incidents in this view
           </h3>
           <p className="mt-1 text-sm text-slate-500">
-            Log the first event or choose a different severity.
+            {activeFilterCount > 0
+              ? "No entries match these filters. Clear one or broaden the search."
+              : "Log the first event to start the knowledge base."}
           </p>
         </div>
       ) : (

@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import {
   incidentInputSchema,
+  resolveIncidentSchema,
   type IncidentActionState,
   type IncidentFieldName,
+  type IncidentLifecycleActionState,
 } from "@/lib/incidents";
 
 const fieldNames = [
@@ -69,6 +71,72 @@ export async function createIncident(
       message:
         "The incident could not be saved. Check the database connection and try again.",
       fieldErrors: {},
+    };
+  }
+}
+
+export async function resolveIncident(
+  _previousState: IncidentLifecycleActionState,
+  formData: FormData,
+): Promise<IncidentLifecycleActionState> {
+  const parsed = resolveIncidentSchema.safeParse({
+    id: formData.get("id"),
+    rootCause: formData.get("rootCause"),
+    resolution: formData.get("resolution"),
+  });
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message:
+        parsed.error.issues[0]?.message ?? "Check the resolution details.",
+    };
+  }
+
+  try {
+    await getDb().incidentLog.update({
+      where: { id: parsed.data.id },
+      data: {
+        rootCause: parsed.data.rootCause,
+        resolution: parsed.data.resolution,
+        resolved: true,
+        resolvedAt: new Date(),
+      },
+    });
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+    return { status: "success", message: "Incident marked resolved." };
+  } catch (error: unknown) {
+    console.error("Failed to resolve incident", error);
+    return {
+      status: "error",
+      message: "The incident could not be resolved. Try again.",
+    };
+  }
+}
+
+export async function reopenIncident(
+  _previousState: IncidentLifecycleActionState,
+  formData: FormData,
+): Promise<IncidentLifecycleActionState> {
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) {
+    return { status: "error", message: "The incident ID is invalid." };
+  }
+
+  try {
+    await getDb().incidentLog.update({
+      where: { id },
+      data: { resolved: false, resolvedAt: null },
+    });
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+    return { status: "success", message: "Incident reopened." };
+  } catch (error: unknown) {
+    console.error("Failed to reopen incident", error);
+    return {
+      status: "error",
+      message: "The incident could not be reopened. Try again.",
     };
   }
 }

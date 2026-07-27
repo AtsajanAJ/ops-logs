@@ -20,6 +20,8 @@ const safeInput: GenerateSummaryInput = {
       description: "Users could not authenticate.",
       severity: "HIGH",
       systemArea: "Site A / Network",
+      rootCause: "Configuration drift",
+      resolution: "Restored the approved settings",
       tags: ["vpn", "access"],
       createdAt: "2026-07-22T04:00:00.000Z",
     },
@@ -49,6 +51,7 @@ describe("summary privacy boundary", () => {
     const prompt = buildSummaryPrompt(safeInput);
 
     expect(prompt).toContain("Site A VPN outage");
+    expect(prompt).toContain("Configuration drift");
     expect(prompt).toContain("Do not invent details");
     expect(prompt).not.toContain("incident-private-id");
     expect(prompt).not.toContain("confirmedAnonymized");

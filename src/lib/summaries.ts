@@ -10,6 +10,8 @@ export const safeIncidentSchema = z.object({
   description: z.string().trim().min(1).max(2_000),
   severity: z.enum(severityValues),
   systemArea: z.string().trim().max(80).nullable(),
+  rootCause: z.string().trim().max(2_000).nullable(),
+  resolution: z.string().trim().max(2_000).nullable(),
   tags: z.array(z.string().trim().min(1).max(40)).max(8),
   createdAt: z.iso.datetime(),
 });
@@ -113,6 +115,12 @@ export function createSafeIncident(incident: IncidentView): SafeIncident {
     severity: incident.severity,
     systemArea: incident.systemArea
       ? maskSensitiveText(incident.systemArea)
+      : null,
+    rootCause: incident.rootCause
+      ? maskSensitiveText(incident.rootCause)
+      : null,
+    resolution: incident.resolution
+      ? maskSensitiveText(incident.resolution)
       : null,
     tags: incident.tags.map(maskSensitiveText),
     createdAt: incident.createdAt,

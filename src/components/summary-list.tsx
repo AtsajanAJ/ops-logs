@@ -112,6 +112,7 @@ function SummaryCard({ summary }: SummaryCardProps): React.JSX.Element {
       return;
     }
     void queryClient.invalidateQueries({ queryKey: ["summaries"] });
+    void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
   }, [queryClient, reviewState.status, saveState.status]);
 
   const feedback =

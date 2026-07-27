@@ -1,7 +1,8 @@
 # Ops Logs
 
 A single-user operations ledger for capturing incidents quickly and turning them into
-reviewable weekly reports. Phase 1 provides the incident entry and filtering workflow.
+reviewable weekly reports. It includes knowledge-base search, AI-assisted report drafts,
+and an eight-week operational dashboard.
 
 ## Local setup
 
@@ -17,11 +18,16 @@ To generate weekly drafts, also add a `GEMINI_API_KEY` from Google AI Studio.
 Then run:
 
 ```bash
-bunx prisma migrate dev --name init
+bunx prisma migrate deploy
 bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+- `/` — quick incident entry, search, and filters
+- `/summaries` — anonymization review and weekly report drafts
+- `/dashboard` — eight-week volume and severity trends
+- `/settings` — sensitive data exports and recovery guidance
 
 ## Commands
 
@@ -31,9 +37,20 @@ bun run lint
 bun run test
 bun run build
 bunx prisma generate
+bunx prisma migrate status
 ```
 
 Use Bun only; npm, Yarn, and pnpm lockfiles should not be added.
+
+## Daily workflow
+
+1. Log an incident from `/`.
+2. Search or filter the ledger when investigating recurring work.
+3. Open **Resolve** to record the root cause and resolution. Reopen it if work resumes.
+4. Prepare a weekly report from `/summaries`, review every AI-bound field, and confirm
+   anonymization before generating.
+5. Edit the draft, save changes, then mark it reviewed.
+6. Use `/dashboard` to inspect the last eight weeks of volume and severity.
 
 ## Data safety
 
@@ -45,7 +62,45 @@ The reports screen applies basic local pattern masking, then requires an editabl
 anonymization review before any incident text is sent to Gemini. Pattern masking
 does not recognize every real name; the confirmation step is mandatory.
 
+## Database changes
+
+Never edit Neon tables manually. After changing `prisma/schema.prisma`, create and apply
+a development migration:
+
+```bash
+bunx prisma migrate dev --name describe_the_change
+bunx prisma generate
+```
+
+For an existing environment, apply committed migrations with `bunx prisma migrate deploy`.
+
+## Export and recovery
+
+The Settings page downloads an Excel-friendly incident CSV or a versioned JSON archive
+containing incidents and weekly summaries. Both contain raw sensitive data and must be
+stored securely. The JSON archive is a portable record, not an automated restore command.
+
+Neon point-in-time restore retention varies by plan and project. Confirm the current
+retention window in the Neon console. Keep periodic JSON exports if that window is not
+enough for your recovery needs.
+
+## Credential rotation
+
+Update `DATABASE_URL` or `GEMINI_API_KEY` in `.env`, then restart `bun run dev`. Never
+commit `.env`. After rotating the database URL, run `bunx prisma migrate status` before
+using the app.
+
+## Troubleshooting
+
+- Database errors: verify `DATABASE_URL`, Neon availability, and `prisma migrate status`.
+- Gemini 429/503: the app retries briefly, then asks you to wait before trying again.
+- Gemini model errors: confirm `gemini-3.6-flash` is available to the API key.
+- Empty reports: verify the selected date range includes incidents.
+- Build failures: run `bun run lint`, `bun run test`, then `bun run build`.
+
 ## Deploying
 
-Set `DATABASE_URL` in the Vercel project, run the production Prisma migration against the
-Neon branch, and deploy the Next.js application. Deployment remains a manual Phase 1 step.
+Deployment, authentication, and Cron automation are currently deferred. Before exposing
+the app publicly, add a single-user access gate, configure `DATABASE_URL` and
+`GEMINI_API_KEY` in Vercel, and run production migrations. Cron must never bypass the
+human anonymization review.

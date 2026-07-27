@@ -17,11 +17,35 @@ export interface IncidentActionState {
   fieldErrors: Partial<Record<IncidentFieldName, string>>;
 }
 
+export interface IncidentLifecycleActionState {
+  status: "idle" | "success" | "error";
+  message: string;
+}
+
 export const initialIncidentActionState: IncidentActionState = {
   status: "idle",
   message: "",
   fieldErrors: {},
 };
+
+export const initialIncidentLifecycleState: IncidentLifecycleActionState = {
+  status: "idle",
+  message: "",
+};
+
+export const resolveIncidentSchema = z.object({
+  id: z.string().min(1),
+  rootCause: z
+    .string()
+    .trim()
+    .max(2_000, "Keep the root cause under 2,000 characters.")
+    .transform((value) => value || null),
+  resolution: z
+    .string()
+    .trim()
+    .min(1, "Describe how the incident was resolved.")
+    .max(2_000, "Keep the resolution under 2,000 characters."),
+});
 
 export const incidentInputSchema = z.object({
   title: z
@@ -53,6 +77,9 @@ export const incidentFilterSchema = z
     severity: z.enum(severityValues).optional(),
     start: z.iso.date().optional(),
     end: z.iso.date().optional(),
+    query: z.string().trim().max(100).optional(),
+    tag: z.string().trim().max(40).optional(),
+    systemArea: z.string().trim().max(80).optional(),
   })
   .superRefine((filters, context) => {
     if (Boolean(filters.start) !== Boolean(filters.end)) {
@@ -78,8 +105,16 @@ export interface IncidentView {
   severity: SeverityValue;
   systemArea: string | null;
   resolved: boolean;
+  rootCause: string | null;
+  resolution: string | null;
   tags: string[];
   createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface IncidentFacets {
+  tags: string[];
+  systemAreas: string[];
 }
 
 export function parseTags(value: string): string[] {

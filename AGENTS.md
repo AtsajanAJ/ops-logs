@@ -17,7 +17,7 @@ Not a customer-facing product — optimize for "works reliably for one person", 
 - Neon PostgreSQL
 - TanStack Query v5 for client-side data fetching/caching
 - Bun as package manager (`bun install`, `bun run dev`, never npm/yarn)
-- Gemini API (`gemini-2.5-flash` model) for summarization — not Claude, not OpenAI
+- Gemini API (`gemini-3.6-flash` model) for summarization — not Claude, not OpenAI
 
 ## Critical rules from prior experience (do not violate)
 - **React 19 setState-in-useEffect rule**: never call `setState` inside a `useEffect` body
