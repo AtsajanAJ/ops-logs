@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model IncidentLog {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  severity    Severity  @default(LOW)
+  systemArea  String?
+  resolved    Boolean   @default(false)
+  rootCause   String?
+  resolution  String?
+  tags        String[]
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@index([createdAt])
+  @@index([severity, createdAt])
+}
+
+model WeeklySummary {
+  id          String   @id @default(cuid())
+  weekStart   DateTime
+  weekEnd     DateTime
+  summaryText String
+  incidentIds String[]
+  reviewed    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}

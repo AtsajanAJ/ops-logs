@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ops Logs
 
-## Getting Started
+A single-user operations ledger for capturing incidents quickly and turning them into
+reviewable weekly reports. Phase 1 provides the incident entry and filtering workflow.
 
-First, run the development server:
+## Local setup
+
+Requirements: Bun and a Neon PostgreSQL database.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env
+bun install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Replace `DATABASE_URL` in `.env` with the pooled connection string from Neon, then:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+bunx prisma migrate dev --name init
+bun run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+## Commands
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+bun run dev
+bun run lint
+bun run test
+bun run build
+bunx prisma generate
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Use Bun only; npm, Yarn, and pnpm lockfiles should not be added.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Data safety
 
-## Deploy on Vercel
+Incident data can contain sensitive customer context. Before Phase 2 sends any content
+to Gemini, hospital names, patient identifiers, and client names must be anonymized.
+AI summaries are drafts and are never finalized without human review.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploying
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set `DATABASE_URL` in the Vercel project, run the production Prisma migration against the
+Neon branch, and deploy the Next.js application. Deployment remains a manual Phase 1 step.
