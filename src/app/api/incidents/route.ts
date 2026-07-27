@@ -1,7 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getDb } from "@/lib/db";
-import { incidentFilterSchema, type IncidentView } from "@/lib/incidents";
+import {
+  incidentFilterSchema,
+  type IncidentPage,
+  type IncidentView,
+} from "@/lib/incidents";
 
 export const runtime = "nodejs";
 
@@ -13,6 +17,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     query: request.nextUrl.searchParams.get("query") || undefined,
     tag: request.nextUrl.searchParams.get("tag") || undefined,
     systemArea: request.nextUrl.searchParams.get("systemArea") || undefined,
+    cursor: request.nextUrl.searchParams.get("cursor") || undefined,
+    limit: request.nextUrl.searchParams.get("limit") || undefined,
   });
 
   if (!parsedFilters.success) {
@@ -23,7 +29,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const { severity, start, end, query, tag, systemArea } =
+    const { severity, start, end, query, tag, systemArea, cursor, limit } =
       parsedFilters.data;
     const incidents = await getDb().incidentLog.findMany({
       where: {
@@ -48,10 +54,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             ]
           : undefined,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : undefined,
+      take: limit ? limit + 1 : undefined,
     });
 
-    const data: IncidentView[] = incidents.map((incident) => ({
+    const hasMore = limit ? incidents.length > limit : false;
+    const visibleIncidents = limit ? incidents.slice(0, limit) : incidents;
+    const data: IncidentView[] = visibleIncidents.map((incident) => ({
       id: incident.id,
       title: incident.title,
       description: incident.description,
@@ -64,6 +75,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       createdAt: incident.createdAt.toISOString(),
       resolvedAt: incident.resolvedAt?.toISOString() ?? null,
     }));
+
+    if (limit) {
+      const page: IncidentPage = {
+        items: data,
+        nextCursor: hasMore ? (data.at(-1)?.id ?? null) : null,
+      };
+
+      return NextResponse.json(page);
+    }
 
     return NextResponse.json(data);
   } catch (error: unknown) {

@@ -1,6 +1,7 @@
 import { Database, Download, KeyRound, ShieldAlert } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
+import { PageHeading } from "@/components/page-heading";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -9,64 +10,58 @@ export default function SettingsPage(): React.JSX.Element {
     <main className="min-h-screen">
       <AppHeader />
 
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-10 lg:py-14">
-        <div className="mb-9 max-w-2xl">
-          <div className="mb-3 flex items-center gap-3">
-            <span className="h-px w-8 bg-orange-500" />
-            <p className="font-mono text-[0.68rem] font-semibold tracking-[0.16em] text-orange-700 uppercase">
-              Phase 04 · Data and reliability
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <PageHeading
+          title="Settings"
+          description="Export your records, check recovery coverage, and keep local credentials secure."
+          className="mb-6"
+        />
+
+        <div className="mb-6 flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+          <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+          <div>
+            <p className="font-semibold">Exports contain sensitive operational data</p>
+            <p className="mt-0.5 text-amber-900">
+              Store downloaded files securely and never upload them to public services.
             </p>
           </div>
-          <h1 className="text-3xl leading-tight font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl">
-            Keep control of the record.
-          </h1>
-          <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base">
-            Export your data, verify recovery settings, and keep credentials
-            outside the repository.
-          </p>
         </div>
 
-        <div className="grid gap-5">
-          <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+        <div className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <section className="p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <Download className="mt-0.5 size-5 text-slate-500" />
-              <div>
+              <Download aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-slate-500" />
+              <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-semibold text-slate-950">
                   Data export
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  CSV contains incident records for spreadsheets. JSON is a
-                  complete versioned archive containing incidents and weekly
-                  summaries.
+                  Use the complete JSON archive for recovery. Download CSV when
+                  you only need incident records in a spreadsheet.
                 </p>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href="/api/export/archive"
+                    download
+                    className={cn(buttonVariants(), "h-11")}
+                  >
+                    Download complete JSON
+                  </a>
+                  <a
+                    href="/api/export/incidents"
+                    download
+                    className={cn(buttonVariants({ variant: "outline" }), "h-11")}
+                  >
+                    Download incident CSV
+                  </a>
+                </div>
               </div>
-            </div>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="/api/export/incidents"
-                download
-                className={cn(buttonVariants({ variant: "outline" }), "h-10")}
-              >
-                Download incident CSV
-              </a>
-              <a
-                href="/api/export/archive"
-                download
-                className={cn(buttonVariants(), "h-10")}
-              >
-                Download complete JSON
-              </a>
-            </div>
-            <div className="mt-5 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-              <ShieldAlert className="mt-0.5 size-4 shrink-0" />
-              Exports contain raw operational data. Store them securely and do
-              not upload them to public services.
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+          <section className="p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <Database className="mt-0.5 size-5 text-slate-500" />
+              <Database aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-slate-500" />
               <div>
                 <h2 className="text-lg font-semibold text-slate-950">
                   Neon recovery
@@ -80,15 +75,17 @@ export default function SettingsPage(): React.JSX.Element {
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+          <section className="p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <KeyRound className="mt-0.5 size-5 text-slate-500" />
+              <KeyRound aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-slate-500" />
               <div>
                 <h2 className="text-lg font-semibold text-slate-950">
                   Credentials
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Keep `DATABASE_URL` and `GEMINI_API_KEY` only in `.env`.
+                  Keep <code className="rounded bg-slate-100 px-1">DATABASE_URL</code>{" "}
+                  and <code className="rounded bg-slate-100 px-1">GEMINI_API_KEY</code>{" "}
+                  only in <code className="rounded bg-slate-100 px-1">.env</code>.
                   Restart the development server after rotating either value.
                 </p>
               </div>

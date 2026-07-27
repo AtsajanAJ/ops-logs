@@ -34,7 +34,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             weekEnd: { lte: bounds.end },
           }
         : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ reviewed: "asc" }, { createdAt: "desc" }],
     });
 
     const data: SummaryView[] = summaries.map((summary) => ({

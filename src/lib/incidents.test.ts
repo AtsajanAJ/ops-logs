@@ -66,6 +66,16 @@ describe("incident validation", () => {
     ).toBe(false);
   });
 
+  it("validates and coerces incident pagination parameters", () => {
+    expect(
+      incidentFilterSchema.parse({ cursor: "incident-20", limit: "20" }),
+    ).toEqual({
+      cursor: "incident-20",
+      limit: 20,
+    });
+    expect(incidentFilterSchema.safeParse({ limit: "51" }).success).toBe(false);
+  });
+
   it("requires a resolution while allowing an unknown root cause", () => {
     expect(
       resolveIncidentSchema.parse({

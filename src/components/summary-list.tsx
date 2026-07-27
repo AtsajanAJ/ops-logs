@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
+  ChevronDown,
   FileText,
   LoaderCircle,
   RefreshCw,
@@ -17,6 +18,7 @@ import {
 } from "@/app/actions/summaries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
   initialSummaryActionState,
@@ -76,7 +78,11 @@ function PendingButton({
       variant={isSave ? "outline" : "default"}
       size="sm"
       disabled={pending || disabled}
-      className={isSave ? "bg-white" : "bg-emerald-700 hover:bg-emerald-800"}
+      className={
+        isSave
+          ? "h-11 bg-white sm:h-9"
+          : "h-11 bg-emerald-700 hover:bg-emerald-800 sm:h-9"
+      }
     >
       {pending ? (
         <LoaderCircle aria-hidden="true" className="animate-spin" />
@@ -92,9 +98,17 @@ function PendingButton({
 
 interface SummaryCardProps {
   summary: SummaryView;
+  expanded: boolean;
+  activeDraft: boolean;
+  onToggle: () => void;
 }
 
-function SummaryCard({ summary }: SummaryCardProps): React.JSX.Element {
+function SummaryCard({
+  summary,
+  expanded,
+  activeDraft,
+  onToggle,
+}: SummaryCardProps): React.JSX.Element {
   const [draftText, setDraftText] = useState(summary.summaryText);
   const [saveState, saveAction] = useActionState(
     updateSummaryDraft,
@@ -120,35 +134,57 @@ function SummaryCard({ summary }: SummaryCardProps): React.JSX.Element {
 
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <header className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-slate-950">
-              {dateFormatter.format(new Date(summary.weekStart))} –{" "}
-              {dateFormatter.format(new Date(summary.weekEnd))}
-            </h3>
-            <Badge
-              variant="outline"
-              className={
-                summary.reviewed
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                  : "border-amber-300 bg-amber-50 text-amber-800"
-              }
-            >
-              {summary.reviewed ? "Reviewed" : "Draft"}
-            </Badge>
-          </div>
-          <p className="mt-1 font-mono text-[0.68rem] tracking-[0.08em] text-slate-500 uppercase">
-            {summary.incidentIds.length} incident
-            {summary.incidentIds.length === 1 ? "" : "s"} · Generated{" "}
-            {dateFormatter.format(new Date(summary.createdAt))}
-          </p>
-        </div>
-      </header>
+      <h3>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={`summary-panel-${summary.id}`}
+          className="ui-transition flex min-h-16 w-full items-center justify-between gap-4 bg-slate-50 px-4 py-3 text-left outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-inset sm:px-5"
+        >
+          <span className="min-w-0">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-slate-950">
+                {dateFormatter.format(new Date(summary.weekStart))} –{" "}
+                {dateFormatter.format(new Date(summary.weekEnd))}
+              </span>
+              <Badge
+                variant="outline"
+                className={
+                  summary.reviewed
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                    : "border-amber-300 bg-amber-50 text-amber-800"
+                }
+              >
+                {summary.reviewed
+                  ? "Reviewed"
+                  : activeDraft
+                    ? "Active draft"
+                    : "Previous draft"}
+              </Badge>
+            </span>
+            <span className="mt-1 block text-xs font-normal text-slate-500">
+              {summary.incidentIds.length} incident
+              {summary.incidentIds.length === 1 ? "" : "s"} · Generated{" "}
+              {dateFormatter.format(new Date(summary.createdAt))}
+            </span>
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={`ui-transition size-5 shrink-0 text-slate-500 transition-transform ${
+              expanded ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </h3>
 
-      <div className="p-4 sm:p-5">
+      <div
+        id={`summary-panel-${summary.id}`}
+        hidden={!expanded}
+        className="border-t border-slate-200 p-4 sm:p-5"
+      >
         {summary.reviewed ? (
-          <div className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
+          <div className="max-w-[75ch] whitespace-pre-wrap text-base leading-7 text-slate-700">
             {summary.summaryText}
           </div>
         ) : (
@@ -157,11 +193,12 @@ function SummaryCard({ summary }: SummaryCardProps): React.JSX.Element {
               <input type="hidden" name="id" value={summary.id} />
               <Textarea
                 name="summaryText"
+                aria-label="Report draft"
                 value={draftText}
                 onChange={(event) => setDraftText(event.target.value)}
                 rows={16}
                 maxLength={20_000}
-                className="resize-y bg-white font-mono text-xs leading-6"
+                className="min-h-80 resize-y bg-white text-base leading-7"
               />
               <div className="flex justify-end">
                 <PendingButton kind="save" disabled={!hasUnsavedChanges} />
@@ -169,8 +206,16 @@ function SummaryCard({ summary }: SummaryCardProps): React.JSX.Element {
             </form>
 
             <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs leading-5 text-slate-500">
-                Save all edits before marking the report reviewed.
+              <p
+                className={
+                  hasUnsavedChanges
+                    ? "text-sm font-medium text-amber-700"
+                    : "text-sm text-slate-600"
+                }
+              >
+                {hasUnsavedChanges
+                  ? "Unsaved changes — save before marking reviewed."
+                  : "All changes saved. This draft is ready for final review."}
               </p>
               <form action={reviewAction}>
                 <input type="hidden" name="id" value={summary.id} />
@@ -198,6 +243,52 @@ function SummaryCard({ summary }: SummaryCardProps): React.JSX.Element {
   );
 }
 
+function SummaryResults({
+  summaries,
+}: {
+  summaries: SummaryView[];
+}): React.JSX.Element {
+  const activeDraftId = summaries.find((summary) => !summary.reviewed)?.id ?? null;
+  const [expandedId, setExpandedId] = useState<string | null>(activeDraftId);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const visibleSummaries = summaries.slice(0, visibleCount);
+
+  return (
+    <div>
+      <div className="grid gap-3">
+        {visibleSummaries.map((summary) => (
+          <SummaryCard
+            key={`${summary.id}:${summary.summaryText}:${summary.reviewed}`}
+            summary={summary}
+            expanded={expandedId === summary.id}
+            activeDraft={summary.id === activeDraftId}
+            onToggle={() =>
+              setExpandedId((current) =>
+                current === summary.id ? null : summary.id,
+              )
+            }
+          />
+        ))}
+      </div>
+      {visibleCount < summaries.length && (
+        <div className="mt-5 flex flex-col items-center gap-2">
+          <p className="text-xs text-slate-500">
+            Showing {visibleSummaries.length} of {summaries.length} reports
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setVisibleCount((current) => current + 5)}
+            className="h-11 bg-white"
+          >
+            Load more reports
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SummaryList({
   range,
 }: SummaryListProps): React.JSX.Element {
@@ -208,11 +299,16 @@ export function SummaryList({
 
   if (summariesQuery.isPending) {
     return (
-      <div className="grid h-40 place-items-center rounded-xl border border-slate-200 bg-white">
-        <LoaderCircle
-          aria-label="Loading weekly reports"
-          className="animate-spin text-slate-400"
-        />
+      <div
+        className="space-y-4 rounded-xl border border-slate-200 bg-white p-5"
+        aria-label="Loading weekly reports"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <Skeleton className="h-5 w-52" />
+          <Skeleton className="h-6 w-20" />
+        </div>
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="ml-auto h-9 w-32" />
       </div>
     );
   }
@@ -249,14 +345,12 @@ export function SummaryList({
     );
   }
 
-  return (
-    <div className="grid gap-4">
-      {summariesQuery.data.map((summary) => (
-        <SummaryCard
-          key={`${summary.id}:${summary.summaryText}:${summary.reviewed}`}
-          summary={summary}
-        />
-      ))}
-    </div>
-  );
+  const resultsKey = summariesQuery.data
+    .map(
+      (summary) =>
+        `${summary.id}:${summary.reviewed}:${summary.createdAt}`,
+    )
+    .join("|");
+
+  return <SummaryResults key={resultsKey} summaries={summariesQuery.data} />;
 }

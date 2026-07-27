@@ -90,20 +90,41 @@ export async function generateSummaryDraft(
     }
 
     const summaryText = await generateWeeklySummary(parsed.data);
-    const summary = await getDb().weeklySummary.create({
-      data: {
+    const db = getDb();
+    const existingDraft = await db.weeklySummary.findFirst({
+      where: {
         weekStart: bounds.start,
         weekEnd: bounds.end,
-        summaryText,
-        incidentIds,
         reviewed: false,
       },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
     });
+    const summary = existingDraft
+      ? await db.weeklySummary.update({
+          where: { id: existingDraft.id },
+          data: {
+            summaryText,
+            incidentIds,
+            createdAt: new Date(),
+          },
+        })
+      : await db.weeklySummary.create({
+          data: {
+            weekStart: bounds.start,
+            weekEnd: bounds.end,
+            summaryText,
+            incidentIds,
+            reviewed: false,
+          },
+        });
 
     revalidatePath("/summaries");
     return {
       status: "success",
-      message: "Draft report generated. Review it before marking it complete.",
+      message: existingDraft
+        ? "The active draft was regenerated. Review it before marking it complete."
+        : "Draft report generated. Review it before marking it complete.",
       summaryId: summary.id,
     };
   } catch (error: unknown) {

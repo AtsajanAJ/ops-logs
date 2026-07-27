@@ -40,8 +40,8 @@ function LifecycleSubmitButton({
       disabled={pending}
       className={
         resolved
-          ? "bg-slate-700 text-white hover:bg-slate-800"
-          : "bg-emerald-700 text-white hover:bg-emerald-800"
+          ? "h-11 bg-slate-700 text-white hover:bg-slate-800"
+          : "h-11 bg-emerald-700 text-white hover:bg-emerald-800"
       }
     >
       {pending ? (
@@ -94,6 +94,7 @@ export function IncidentLifecycleDialog({
             type="button"
             size="xs"
             variant={incident.resolved ? "outline" : "secondary"}
+            className="h-11 px-3 sm:h-8"
           />
         }
       >
@@ -110,17 +111,17 @@ export function IncidentLifecycleDialog({
         {incident.resolved ? (
           <div className="grid gap-5">
             <div>
-              <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <h3 className="text-sm font-semibold text-slate-700">
                 Root cause
-              </p>
+              </h3>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700">
                 {incident.rootCause || "Not yet determined"}
               </p>
             </div>
             <div>
-              <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <h3 className="text-sm font-semibold text-slate-700">
                 Resolution
-              </p>
+              </h3>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700">
                 {incident.resolution}
               </p>

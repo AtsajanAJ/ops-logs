@@ -63,13 +63,25 @@ function FieldError({ message }: FieldErrorProps): React.JSX.Element | null {
   );
 }
 
-export function IncidentForm(): React.JSX.Element {
+interface IncidentFormProps {
+  idPrefix?: string;
+}
+
+export function IncidentForm({
+  idPrefix = "",
+}: IncidentFormProps): React.JSX.Element {
   const [state, formAction] = useActionState(
     createIncident,
     initialIncidentActionState,
   );
   const formRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
+  const titleId = `${idPrefix}title`;
+  const titleErrorId = `${idPrefix}title-error`;
+  const severityId = `${idPrefix}severity`;
+  const systemAreaId = `${idPrefix}system-area`;
+  const descriptionId = `${idPrefix}description`;
+  const tagsId = `${idPrefix}tags`;
 
   useEffect(() => {
     if (state.status !== "success") return;
@@ -82,32 +94,47 @@ export function IncidentForm(): React.JSX.Element {
     <form
       ref={formRef}
       action={formAction}
-      className="grid gap-5"
+      className="grid gap-4"
+      onKeyDown={(event) => {
+        if (
+          (event.ctrlKey || event.metaKey) &&
+          event.key === "Enter" &&
+          !event.nativeEvent.isComposing
+        ) {
+          event.preventDefault();
+          event.currentTarget.requestSubmit();
+        }
+      }}
       noValidate
     >
       <div className="grid gap-2">
-        <Label htmlFor="title">Incident title</Label>
+        <Label htmlFor={titleId}>
+          Incident title <span className="text-red-600" aria-hidden="true">*</span>
+        </Label>
         <Input
-          id="title"
+          id={titleId}
           name="title"
           placeholder="VPN access failed after update"
           maxLength={120}
           autoFocus
+          required
           aria-invalid={Boolean(state.fieldErrors.title)}
-          aria-describedby={state.fieldErrors.title ? "title-error" : undefined}
+          aria-describedby={state.fieldErrors.title ? titleErrorId : undefined}
           className="h-11 bg-white"
         />
-        <div id="title-error">
+        <div id={titleErrorId}>
           <FieldError message={state.fieldErrors.title} />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
-          <Label htmlFor="severity">Severity</Label>
+          <Label htmlFor={severityId}>
+            Severity <span className="text-red-600" aria-hidden="true">*</span>
+          </Label>
           <Select name="severity" defaultValue="LOW">
             <SelectTrigger
-              id="severity"
+              id={severityId}
               className="h-11! w-full bg-white"
               aria-invalid={Boolean(state.fieldErrors.severity)}
             >
@@ -129,9 +156,11 @@ export function IncidentForm(): React.JSX.Element {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="systemArea">System area</Label>
+          <Label htmlFor={systemAreaId}>
+            System area <span className="font-normal text-slate-500">(optional)</span>
+          </Label>
           <Input
-            id="systemArea"
+            id={systemAreaId}
             name="systemArea"
             placeholder="Network, PACS, access"
             maxLength={80}
@@ -143,13 +172,16 @@ export function IncidentForm(): React.JSX.Element {
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="description">What happened?</Label>
+        <Label htmlFor={descriptionId}>
+          What happened? <span className="text-red-600" aria-hidden="true">*</span>
+        </Label>
         <Textarea
-          id="description"
+          id={descriptionId}
           name="description"
           placeholder="Record the symptoms, impact, and what you tried."
           maxLength={2_000}
           rows={5}
+          required
           aria-invalid={Boolean(state.fieldErrors.description)}
           className="min-h-28 resize-y bg-white"
         />
@@ -157,9 +189,11 @@ export function IncidentForm(): React.JSX.Element {
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="tags">Tags</Label>
+        <Label htmlFor={tagsId}>
+          Tags <span className="font-normal text-slate-500">(optional)</span>
+        </Label>
         <Input
-          id="tags"
+          id={tagsId}
           name="tags"
           placeholder="vpn, access, update"
           maxLength={250}
@@ -171,15 +205,22 @@ export function IncidentForm(): React.JSX.Element {
       </div>
 
       <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <div
-          aria-live="polite"
-          className={
-            state.status === "error"
-              ? "text-sm font-medium text-red-700"
-              : "text-sm font-medium text-emerald-700"
-          }
-        >
-          {state.message}
+        <div className="min-h-5">
+          <div
+            aria-live="polite"
+            className={
+              state.status === "error"
+                ? "text-sm font-medium text-red-700"
+                : "text-sm font-medium text-emerald-700"
+            }
+          >
+            {state.message}
+          </div>
+          {!state.message && (
+            <p className="text-xs text-slate-500">
+              Press Ctrl or Cmd + Enter to save.
+            </p>
+          )}
         </div>
         <SubmitButton />
       </div>

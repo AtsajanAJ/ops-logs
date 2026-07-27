@@ -39,6 +39,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-severity-critical: var(--severity-critical);
+  --color-severity-high: var(--severity-high);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-low: var(--severity-low);
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -67,6 +73,13 @@
   --border: oklch(0.9 0.012 255);
   --input: oklch(0.88 0.014 255);
   --ring: oklch(0.63 0.15 50);
+  --severity-critical: oklch(0.55 0.22 27);
+  --severity-high: oklch(0.65 0.19 44);
+  --severity-medium: oklch(0.72 0.16 76);
+  --severity-low: oklch(0.63 0.13 230);
+  --status-success: oklch(0.55 0.14 155);
+  --status-warning: oklch(0.65 0.15 76);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -123,13 +136,48 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image:
-      linear-gradient(to right, oklch(0.78 0.015 255 / 0.12) 1px, transparent 1px),
-      linear-gradient(to bottom, oklch(0.78 0.015 255 / 0.12) 1px, transparent 1px);
-    background-size: 32px 32px;
+    min-width: 20rem;
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3 {
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+  p {
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+}
+
+@layer utilities {
+  .ui-transition {
+    transition-duration: 180ms;
+    transition-timing-function: var(--ease-out-quart);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 63.999rem) {
+  body {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+
+  html {
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
   }
 }
 

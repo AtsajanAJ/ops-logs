@@ -80,6 +80,8 @@ export const incidentFilterSchema = z
     query: z.string().trim().max(100).optional(),
     tag: z.string().trim().max(40).optional(),
     systemArea: z.string().trim().max(80).optional(),
+    cursor: z.string().trim().min(1).max(100).optional(),
+    limit: z.coerce.number().int().min(1).max(50).optional(),
   })
   .superRefine((filters, context) => {
     if (Boolean(filters.start) !== Boolean(filters.end)) {
@@ -110,6 +112,11 @@ export interface IncidentView {
   tags: string[];
   createdAt: string;
   resolvedAt: string | null;
+}
+
+export interface IncidentPage {
+  items: IncidentView[];
+  nextCursor: string | null;
 }
 
 export interface IncidentFacets {

@@ -1,10 +1,12 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  ChevronDown,
   Inbox,
+  LoaderCircle,
   RefreshCw,
   Search,
   SlidersHorizontal,
@@ -15,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IncidentLifecycleDialog } from "@/components/incident-lifecycle-dialog";
+import { SectionHeading } from "@/components/page-heading";
 import {
   Select,
   SelectContent,
@@ -22,9 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   severityValues,
   type IncidentFacets,
+  type IncidentPage,
   type IncidentView,
   type SeverityValue,
 } from "@/lib/incidents";
@@ -48,17 +53,10 @@ const severityLabels: Record<SeverityValue, string> = {
 };
 
 const severityStyles: Record<SeverityValue, string> = {
-  LOW: "border-sky-300 bg-sky-50 text-sky-800",
-  MEDIUM: "border-amber-300 bg-amber-50 text-amber-800",
-  HIGH: "border-orange-300 bg-orange-50 text-orange-800",
-  CRITICAL: "border-red-300 bg-red-50 text-red-800",
-};
-
-const railStyles: Record<SeverityValue, string> = {
-  LOW: "bg-sky-400",
-  MEDIUM: "bg-amber-400",
-  HIGH: "bg-orange-500",
-  CRITICAL: "bg-red-600",
+  LOW: "bg-severity-low",
+  MEDIUM: "bg-severity-medium",
+  HIGH: "bg-severity-high",
+  CRITICAL: "bg-severity-critical",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -68,8 +66,9 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 
 async function fetchIncidents(
   filters: IncidentFilters,
-): Promise<IncidentView[]> {
-  const params = new URLSearchParams();
+  cursor: string | null,
+): Promise<IncidentPage> {
+  const params = new URLSearchParams({ limit: "10" });
   if (filters.severity !== "ALL") {
     params.set("severity", filters.severity);
   }
@@ -78,6 +77,7 @@ async function fetchIncidents(
     params.set("systemArea", filters.systemArea);
   }
   if (filters.query) params.set("query", filters.query);
+  if (cursor) params.set("cursor", cursor);
 
   const response = await fetch(`/api/incidents?${params.toString()}`);
   const payload: unknown = await response.json();
@@ -93,7 +93,7 @@ async function fetchIncidents(
     throw new Error(message);
   }
 
-  return payload as IncidentView[];
+  return payload as IncidentPage;
 }
 
 async function fetchIncidentFacets(): Promise<IncidentFacets> {
@@ -118,10 +118,16 @@ function IncidentSkeleton(): React.JSX.Element {
   return (
     <div className="grid gap-3" aria-label="Loading incidents">
       {[0, 1, 2].map((item) => (
-        <div
-          key={item}
-          className="h-32 animate-pulse rounded-xl border border-slate-200 bg-white/60"
-        />
+        <div key={item} className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-4 w-2/5" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-4/5" />
+            </div>
+            <Skeleton className="h-8 w-20" />
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -133,29 +139,30 @@ interface IncidentCardProps {
 
 function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
   return (
-    <article className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
-      <div
-        aria-hidden="true"
-        className={cn(
-          "absolute inset-y-0 left-0 w-1.5",
-          railStyles[incident.severity],
-        )}
-      />
-      <div className="grid gap-4 p-4 pl-5 sm:grid-cols-[9rem_1fr] sm:p-5 sm:pl-6">
+    <article
+      className={cn(
+        "ui-transition rounded-xl border border-slate-200 p-4 transition-colors sm:p-5",
+        incident.resolved
+          ? "bg-slate-50/70 text-slate-600"
+          : "bg-white hover:border-slate-300",
+      )}
+    >
+      <div className="grid gap-3 sm:grid-cols-[8.5rem_1fr]">
         <div className="flex items-start justify-between gap-3 sm:block">
           <time
             dateTime={incident.createdAt}
-            className="font-mono text-[0.68rem] leading-5 font-semibold tracking-[0.08em] text-slate-500 uppercase"
+            className="text-xs leading-5 text-slate-500"
           >
             {dateFormatter.format(new Date(incident.createdAt))}
           </time>
           <Badge
             variant="outline"
-            className={cn(
-              "mt-0.5 sm:mt-3",
-              severityStyles[incident.severity],
-            )}
+            className="mt-0.5 gap-1.5 border-slate-200 bg-white text-slate-700 sm:mt-2"
           >
+            <span
+              aria-hidden="true"
+              className={cn("size-2 rounded-full", severityStyles[incident.severity])}
+            />
             {severityLabels[incident.severity]}
           </Badge>
         </div>
@@ -166,15 +173,15 @@ function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
               {incident.title}
             </h3>
             <div className="flex flex-wrap items-center gap-2">
+              {incident.systemArea && (
+                <span className="text-xs font-medium text-slate-500">
+                  {incident.systemArea}
+                </span>
+              )}
               {incident.resolved && (
                 <Badge className="bg-emerald-100 text-emerald-800">
                   Resolved
                 </Badge>
-              )}
-              {incident.systemArea && (
-                <span className="font-mono text-[0.68rem] font-semibold tracking-[0.08em] text-slate-500 uppercase">
-                  {incident.systemArea}
-                </span>
               )}
               <IncidentLifecycleDialog incident={incident} />
             </div>
@@ -185,11 +192,7 @@ function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
           {incident.tags.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5" aria-label="Tags">
               {incident.tags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="bg-slate-100 font-mono text-[0.68rem] text-slate-600"
-                >
+                <Badge key={tag} variant="secondary" className="bg-slate-100 text-xs text-slate-600">
                   #{tag}
                 </Badge>
               ))}
@@ -206,6 +209,7 @@ export function IncidentList(): React.JSX.Element {
   const [tag, setTag] = useState<FacetFilter>("ALL");
   const [systemArea, setSystemArea] = useState<FacetFilter>("ALL");
   const [query, setQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const deferredQuery = useDeferredValue(query.trim());
   const filters: IncidentFilters = {
     severity,
@@ -213,9 +217,11 @@ export function IncidentList(): React.JSX.Element {
     systemArea,
     query: deferredQuery,
   };
-  const incidentsQuery = useQuery({
+  const incidentsQuery = useInfiniteQuery({
     queryKey: ["incidents", filters],
-    queryFn: () => fetchIncidents(filters),
+    queryFn: ({ pageParam }) => fetchIncidents(filters, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
   const facetsQuery = useQuery({
     queryKey: ["incident-facets"],
@@ -227,6 +233,8 @@ export function IncidentList(): React.JSX.Element {
     systemArea !== "ALL",
     Boolean(query.trim()),
   ].filter(Boolean).length;
+  const incidents =
+    incidentsQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
   function clearFilters(): void {
     setSeverity("ALL");
@@ -236,27 +244,22 @@ export function IncidentList(): React.JSX.Element {
   }
 
   return (
-    <section aria-labelledby="incident-ledger-title">
+    <section aria-label="Incident ledger">
       <div className="mb-5">
-        <div>
-          <p className="font-mono text-[0.68rem] font-semibold tracking-[0.16em] text-slate-500 uppercase">
-            Recorded events
-          </p>
-          <h2
-            id="incident-ledger-title"
-            className="mt-1 text-2xl font-semibold tracking-tight text-slate-950"
-          >
-            Incident ledger
-            {incidentsQuery.data && (
-              <span className="ml-2 align-middle font-mono text-sm font-medium text-slate-400">
-                {incidentsQuery.data.length.toString().padStart(2, "0")}
-              </span>
-            )}
-          </h2>
-        </div>
+        <SectionHeading
+          title="Incident ledger"
+          description="Newest incidents appear first."
+          meta={
+            incidentsQuery.data ? (
+              <Badge variant="secondary">
+                {incidents.length} shown
+              </Badge>
+            ) : undefined
+          }
+        />
 
-        <div className="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(13rem,1fr)_repeat(3,minmax(8rem,0.55fr))_auto]">
-          <div className="relative sm:col-span-2 xl:col-span-1">
+        <div className="mt-4 flex gap-2">
+          <div className="relative min-w-0 flex-1">
             <Search
               aria-hidden="true"
               className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
@@ -265,12 +268,40 @@ export function IncidentList(): React.JSX.Element {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search incidents…"
+              placeholder="Search title, description, or system area…"
               aria-label="Search incidents"
-              className="h-9 bg-white pl-9"
+              className="h-11 bg-white pl-9 md:h-9"
             />
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowFilters((current) => !current)}
+            aria-expanded={showFilters}
+            aria-controls="incident-filters"
+            className="h-11 shrink-0 md:hidden"
+          >
+            <SlidersHorizontal aria-hidden="true" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-slate-950 px-1.5 text-xs text-white">
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDown
+              aria-hidden="true"
+              className={cn("ui-transition transition-transform", showFilters && "rotate-180")}
+            />
+          </Button>
+        </div>
 
+        <div
+          id="incident-filters"
+          className={cn(
+            "mt-3 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid md:grid-cols-2 xl:grid-cols-[repeat(3,minmax(8rem,1fr))_auto]",
+            showFilters ? "grid" : "hidden",
+          )}
+        >
           <Select
             value={severity}
             onValueChange={(value) =>
@@ -355,11 +386,11 @@ export function IncidentList(): React.JSX.Element {
           </Button>
         </div>
 
-        <div className="mt-2 flex min-h-5 items-center gap-2 text-xs text-slate-500">
+        <div className="mt-2 flex min-h-5 items-start gap-2 text-xs leading-5 text-slate-500">
           <SlidersHorizontal aria-hidden="true" className="size-3.5" />
           {activeFilterCount > 0
             ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
-            : "Search title, description, system area, or an exact tag"}
+            : "Search is instant. Use filters to narrow by severity, system area, or tag."}
           {facetsQuery.isError && (
             <span className="font-medium text-red-700">
               · {facetsQuery.error.message}
@@ -392,7 +423,7 @@ export function IncidentList(): React.JSX.Element {
             </div>
           </div>
         </div>
-      ) : incidentsQuery.data.length === 0 ? (
+      ) : incidents.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center">
           <Inbox aria-hidden="true" className="mx-auto size-6 text-slate-400" />
           <h3 className="mt-3 font-semibold text-slate-800">
@@ -405,10 +436,28 @@ export function IncidentList(): React.JSX.Element {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3">
-          {incidentsQuery.data.map((incident) => (
-            <IncidentCard key={incident.id} incident={incident} />
-          ))}
+        <div>
+          <div className="grid gap-3">
+            {incidents.map((incident) => (
+              <IncidentCard key={incident.id} incident={incident} />
+            ))}
+          </div>
+          {incidentsQuery.hasNextPage && (
+            <div className="mt-5 flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void incidentsQuery.fetchNextPage()}
+                disabled={incidentsQuery.isFetchingNextPage}
+                className="h-11 min-w-36 bg-white"
+              >
+                {incidentsQuery.isFetchingNextPage && (
+                  <LoaderCircle aria-hidden="true" className="animate-spin" />
+                )}
+                {incidentsQuery.isFetchingNextPage ? "Loading…" : "Load older"}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </section>

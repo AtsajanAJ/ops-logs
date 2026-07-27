@@ -5,7 +5,6 @@ import {
   AlertOctagon,
   CircleDot,
   FileWarning,
-  LoaderCircle,
   RefreshCw,
 } from "lucide-react";
 import {
@@ -20,13 +19,14 @@ import {
 } from "recharts";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardData } from "@/lib/dashboard";
 
 const severityColors: Record<string, string> = {
-  CRITICAL: "#dc2626",
-  HIGH: "#f97316",
-  MEDIUM: "#f59e0b",
-  LOW: "#38bdf8",
+  CRITICAL: "var(--severity-critical)",
+  HIGH: "var(--severity-high)",
+  MEDIUM: "var(--severity-medium)",
+  LOW: "var(--severity-low)",
 };
 
 async function fetchDashboard(): Promise<DashboardData> {
@@ -61,17 +61,17 @@ function MetricCard({
   icon,
 }: MetricCardProps): React.JSX.Element {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex items-start justify-between">
-        <p className="font-mono text-[0.68rem] font-semibold tracking-[0.14em] text-slate-500 uppercase">
-          {label}
-        </p>
-        <span className="text-slate-400">{icon}</span>
+    <div className="flex items-center gap-4 border-b border-slate-200 p-4 last:border-b-0 sm:border-b-0 sm:p-5">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-slate-600">{label}</p>
+        <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+          <p className="text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
+          <p className="text-xs text-slate-500">{detail}</p>
+        </div>
       </div>
-      <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-        {value}
-      </p>
-      <p className="mt-1 text-xs text-slate-500">{detail}</p>
     </div>
   );
 }
@@ -84,11 +84,22 @@ export function DashboardView(): React.JSX.Element {
 
   if (dashboardQuery.isPending) {
     return (
-      <div className="grid h-64 place-items-center rounded-xl border border-slate-200 bg-white">
-        <LoaderCircle
-          aria-label="Loading dashboard"
-          className="animate-spin text-slate-400"
-        />
+      <div className="grid gap-6" aria-label="Loading dashboard">
+        <div className="grid overflow-hidden rounded-xl border border-slate-200 bg-white sm:grid-cols-3">
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="flex gap-4 border-b border-slate-200 p-5 last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0">
+              <Skeleton className="size-9 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-7 w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-80 w-full" />
+        </div>
       </div>
     );
   }
@@ -113,12 +124,21 @@ export function DashboardView(): React.JSX.Element {
   }
 
   const data = dashboardQuery.data;
+  const weeklySummary = data.weeklyTrend
+    .map(
+      (week) =>
+        `${week.label}: ${week.low + week.medium + week.high + week.critical} incidents`,
+    )
+    .join("; ");
+  const severitySummary = data.severityBreakdown
+    .map((point) => `${point.severity.toLowerCase()}: ${point.count}`)
+    .join("; ");
 
   return (
     <div className="grid gap-6">
       <section
         aria-label="Incident metrics"
-        className="grid gap-3 sm:grid-cols-3"
+        className="grid overflow-hidden rounded-xl border border-slate-200 bg-white sm:grid-cols-3 sm:divide-x sm:divide-slate-200"
       >
         <MetricCard
           label="Total incidents"
@@ -143,17 +163,15 @@ export function DashboardView(): React.JSX.Element {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(18rem,0.75fr)]">
         <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="mb-5">
-            <p className="font-mono text-[0.68rem] font-semibold tracking-[0.14em] text-slate-500 uppercase">
-              Weekly volume
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-950">
+            <h2 className="text-lg font-semibold text-slate-950">
               Eight-week incident trend
             </h2>
+            <p className="mt-1 text-sm text-slate-500">Weekly volume by severity.</p>
           </div>
+          <p className="sr-only">{weeklySummary}</p>
           <div
             className="h-72 min-w-0"
-            role="img"
-            aria-label="Stacked bar chart of incidents per week by severity"
+            aria-hidden="true"
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.weeklyTrend}>
@@ -179,24 +197,24 @@ export function DashboardView(): React.JSX.Element {
                     boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
                   }}
                 />
-                <Bar dataKey="low" name="Low" stackId="severity" fill="#38bdf8" />
+                <Bar dataKey="low" name="Low" stackId="severity" fill="var(--severity-low)" />
                 <Bar
                   dataKey="medium"
                   name="Medium"
                   stackId="severity"
-                  fill="#f59e0b"
+                  fill="var(--severity-medium)"
                 />
                 <Bar
                   dataKey="high"
                   name="High"
                   stackId="severity"
-                  fill="#f97316"
+                  fill="var(--severity-high)"
                 />
                 <Bar
                   dataKey="critical"
                   name="Critical"
                   stackId="severity"
-                  fill="#dc2626"
+                  fill="var(--severity-critical)"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -206,17 +224,15 @@ export function DashboardView(): React.JSX.Element {
 
         <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="mb-5">
-            <p className="font-mono text-[0.68rem] font-semibold tracking-[0.14em] text-slate-500 uppercase">
-              Risk profile
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-950">
+            <h2 className="text-lg font-semibold text-slate-950">
               Severity breakdown
             </h2>
+            <p className="mt-1 text-sm text-slate-500">Incident count by priority.</p>
           </div>
+          <p className="sr-only">{severitySummary}</p>
           <div
             className="h-72 min-w-0"
-            role="img"
-            aria-label="Horizontal bar chart of incidents by severity"
+            aria-hidden="true"
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart

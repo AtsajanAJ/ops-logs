@@ -7,6 +7,7 @@ import {
   type DateRange,
 } from "@/components/summary-generator";
 import { SummaryList } from "@/components/summary-list";
+import { SectionHeading } from "@/components/page-heading";
 
 interface SummaryWorkspaceProps {
   defaultRange: DateRange;
@@ -19,36 +20,24 @@ export function SummaryWorkspace({
 
   return (
     <div className="grid gap-12">
-      <section aria-labelledby="generate-report-title">
-        <div className="mb-5">
-          <p className="font-mono text-[0.68rem] font-semibold tracking-[0.16em] text-slate-500 uppercase">
-            Step 01 · Protect and prepare
-          </p>
-          <h2
-            id="generate-report-title"
-            className="mt-1 text-2xl font-semibold tracking-tight text-slate-950"
-          >
-            Generate a weekly draft
-          </h2>
-        </div>
+      <section aria-label="Prepare safe report data">
+        <SectionHeading
+          title="1. Prepare safe data"
+          description="Choose a week and verify every field before anything is sent to Gemini."
+          className="mb-5"
+        />
         <SummaryGenerator
           defaultRange={defaultRange}
           onRangePrepared={setActiveRange}
         />
       </section>
 
-      <section aria-labelledby="report-drafts-title">
-        <div className="mb-5">
-          <p className="font-mono text-[0.68rem] font-semibold tracking-[0.16em] text-slate-500 uppercase">
-            Step 02 · Edit and confirm
-          </p>
-          <h2
-            id="report-drafts-title"
-            className="mt-1 text-2xl font-semibold tracking-tight text-slate-950"
-          >
-            Report drafts
-          </h2>
-        </div>
+      <section aria-label="Review report drafts">
+        <SectionHeading
+          title="2. Review drafts"
+          description="Edit generated reports, save changes, and mark the final version as reviewed."
+          className="mb-5"
+        />
         <SummaryList range={activeRange} />
       </section>
     </div>

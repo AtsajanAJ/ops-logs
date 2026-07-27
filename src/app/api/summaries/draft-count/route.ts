@@ -6,10 +6,11 @@ export const runtime = "nodejs";
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const count = await getDb().weeklySummary.count({
+    const activeRanges = await getDb().weeklySummary.groupBy({
+      by: ["weekStart", "weekEnd"],
       where: { reviewed: false },
     });
-    return NextResponse.json({ count });
+    return NextResponse.json({ count: activeRanges.length });
   } catch (error: unknown) {
     console.error("Failed to count summary drafts", error);
     return NextResponse.json(
