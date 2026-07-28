@@ -136,6 +136,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      linear-gradient(to right, oklch(0.78 0.015 255 / 0.12) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.78 0.015 255 / 0.12) 1px, transparent 1px);
+    background-size: 32px 32px;
     min-width: 20rem;
   }
   html {

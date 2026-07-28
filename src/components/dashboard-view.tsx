@@ -7,6 +7,7 @@ import {
   FileWarning,
   RefreshCw,
 } from "lucide-react";
+import { useSyncExternalStore } from "react";
 import {
   Bar,
   BarChart,
@@ -28,6 +29,37 @@ const severityColors: Record<string, string> = {
   MEDIUM: "var(--severity-medium)",
   LOW: "var(--severity-low)",
 };
+
+const severityShortLabels: Record<string, string> = {
+  CRITICAL: "Crit",
+  HIGH: "High",
+  MEDIUM: "Med",
+  LOW: "Low",
+};
+
+const NARROW_QUERY = "(max-width: 639px)";
+
+function subscribeNarrow(onChange: () => void): () => void {
+  const media = window.matchMedia(NARROW_QUERY);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+function getNarrowSnapshot(): boolean {
+  return window.matchMedia(NARROW_QUERY).matches;
+}
+
+function getNarrowServerSnapshot(): boolean {
+  return false;
+}
+
+function useIsNarrow(): boolean {
+  return useSyncExternalStore(
+    subscribeNarrow,
+    getNarrowSnapshot,
+    getNarrowServerSnapshot,
+  );
+}
 
 async function fetchDashboard(): Promise<DashboardData> {
   const response = await fetch("/api/dashboard");
@@ -77,6 +109,7 @@ function MetricCard({
 }
 
 export function DashboardView(): React.JSX.Element {
+  const isNarrow = useIsNarrow();
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", { weeks: 8 }],
     queryFn: fetchDashboard,
@@ -97,8 +130,8 @@ export function DashboardView(): React.JSX.Element {
           ))}
         </div>
         <div className="grid gap-6 lg:grid-cols-2">
-          <Skeleton className="h-80 w-full" />
-          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-72 w-full sm:h-80" />
+          <Skeleton className="h-64 w-full sm:h-80" />
         </div>
       </div>
     );
@@ -133,6 +166,14 @@ export function DashboardView(): React.JSX.Element {
   const severitySummary = data.severityBreakdown
     .map((point) => `${point.severity.toLowerCase()}: ${point.count}`)
     .join("; ");
+  const tickSize = isNarrow ? 10 : 11;
+  const tooltipStyle = {
+    border: "1px solid #e2e8f0",
+    borderRadius: "8px",
+    boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
+    fontSize: isNarrow ? 12 : 13,
+    maxWidth: isNarrow ? 220 : undefined,
+  } as const;
 
   return (
     <div className="grid gap-6">
@@ -161,8 +202,8 @@ export function DashboardView(): React.JSX.Element {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(18rem,0.75fr)]">
-        <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <div className="mb-5">
+        <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <div className="mb-4 sm:mb-5">
             <h2 className="text-lg font-semibold text-slate-950">
               Eight-week incident trend
             </h2>
@@ -170,32 +211,42 @@ export function DashboardView(): React.JSX.Element {
           </div>
           <p className="sr-only">{weeklySummary}</p>
           <div
-            className="h-72 min-w-0"
+            className="h-64 min-w-0 w-full sm:h-72"
             aria-hidden="true"
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.weeklyTrend}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <BarChart
+                data={data.weeklyTrend}
+                margin={
+                  isNarrow
+                    ? { top: 4, right: 4, left: -12, bottom: 8 }
+                    : { top: 8, right: 8, left: 0, bottom: 0 }
+                }
+                barCategoryGap={isNarrow ? "18%" : "22%"}
+              >
                 <CartesianGrid vertical={false} stroke="#e2e8f0" />
                 <XAxis
                   dataKey="label"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: "#64748b", fontSize: 11 }}
+                  interval={isNarrow ? "preserveStartEnd" : 0}
+                  minTickGap={isNarrow ? 8 : 16}
+                  angle={isNarrow ? -35 : 0}
+                  textAnchor={isNarrow ? "end" : "middle"}
+                  height={isNarrow ? 48 : 30}
+                  tick={{ fill: "#64748b", fontSize: tickSize }}
                 />
                 <YAxis
                   allowDecimals={false}
                   tickLine={false}
                   axisLine={false}
-                  width={28}
-                  tick={{ fill: "#64748b", fontSize: 11 }}
+                  width={isNarrow ? 24 : 28}
+                  tick={{ fill: "#64748b", fontSize: tickSize }}
                 />
                 <Tooltip
                   cursor={{ fill: "#f1f5f9" }}
-                  contentStyle={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "8px",
-                    boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-                  }}
+                  contentStyle={tooltipStyle}
+                  wrapperStyle={{ outline: "none" }}
                 />
                 <Bar dataKey="low" name="Low" stackId="severity" fill="var(--severity-low)" />
                 <Bar
@@ -222,8 +273,8 @@ export function DashboardView(): React.JSX.Element {
           </div>
         </section>
 
-        <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <div className="mb-5">
+        <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <div className="mb-4 sm:mb-5">
             <h2 className="text-lg font-semibold text-slate-950">
               Severity breakdown
             </h2>
@@ -231,14 +282,19 @@ export function DashboardView(): React.JSX.Element {
           </div>
           <p className="sr-only">{severitySummary}</p>
           <div
-            className="h-72 min-w-0"
+            className="h-56 min-w-0 w-full sm:h-72"
             aria-hidden="true"
           >
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <BarChart
                 data={data.severityBreakdown}
                 layout="vertical"
-                margin={{ left: 8 }}
+                margin={
+                  isNarrow
+                    ? { top: 4, right: 12, left: 0, bottom: 0 }
+                    : { top: 8, right: 16, left: 8, bottom: 0 }
+                }
+                barCategoryGap={isNarrow ? "28%" : "24%"}
               >
                 <CartesianGrid horizontal={false} stroke="#e2e8f0" />
                 <XAxis
@@ -246,22 +302,27 @@ export function DashboardView(): React.JSX.Element {
                   allowDecimals={false}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: "#64748b", fontSize: 11 }}
+                  tick={{ fill: "#64748b", fontSize: tickSize }}
                 />
                 <YAxis
                   type="category"
                   dataKey="severity"
                   tickLine={false}
                   axisLine={false}
-                  width={72}
-                  tick={{ fill: "#475569", fontSize: 11, fontWeight: 600 }}
+                  width={isNarrow ? 40 : 72}
+                  tickFormatter={(value: string) =>
+                    isNarrow
+                      ? (severityShortLabels[value] ?? value)
+                      : value
+                  }
+                  tick={{ fill: "#475569", fontSize: tickSize, fontWeight: 600 }}
                 />
                 <Tooltip
                   cursor={{ fill: "#f1f5f9" }}
-                  contentStyle={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "8px",
-                  }}
+                  contentStyle={tooltipStyle}
+                  wrapperStyle={{ outline: "none" }}
+                  formatter={(value) => [value, "Incidents"]}
+                  labelFormatter={(label) => String(label)}
                 />
                 <Bar dataKey="count" name="Incidents" radius={[0, 4, 4, 0]}>
                   {data.severityBreakdown.map((point) => (
