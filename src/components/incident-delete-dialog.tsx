@@ -1,0 +1,119 @@
+"use client";
+
+import { useActionState, useEffect } from "react";
+import { useFormStatus } from "react-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { LoaderCircle, Trash2 } from "lucide-react";
+
+import { deleteIncident } from "@/app/actions/incidents";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  initialIncidentLifecycleState,
+  type IncidentView,
+} from "@/lib/incidents";
+
+function DeleteSubmitButton(): React.JSX.Element {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button
+      type="submit"
+      size="sm"
+      variant="destructive"
+      disabled={pending}
+      className="h-11 sm:h-8"
+    >
+      {pending ? (
+        <LoaderCircle aria-hidden="true" className="animate-spin" />
+      ) : (
+        <Trash2 aria-hidden="true" />
+      )}
+      {pending ? "Deleting…" : "Delete incident"}
+    </Button>
+  );
+}
+
+interface IncidentDeleteDialogProps {
+  incident: IncidentView;
+}
+
+export function IncidentDeleteDialog({
+  incident,
+}: IncidentDeleteDialogProps): React.JSX.Element {
+  const [state, formAction] = useActionState(
+    deleteIncident,
+    initialIncidentLifecycleState,
+  );
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (state.status !== "success") {
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    void queryClient.invalidateQueries({ queryKey: ["incident-facets"] });
+  }, [queryClient, state.status]);
+
+  return (
+    <Dialog>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            size="xs"
+            variant="ghost"
+            className="h-11 px-3 text-slate-500 hover:bg-red-50 hover:text-red-700 sm:h-8"
+            aria-label={`Delete incident: ${incident.title}`}
+          />
+        }
+      >
+        <Trash2 aria-hidden="true" className="size-3.5" />
+        <span className="sm:sr-only">Delete</span>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Delete incident?</DialogTitle>
+          <DialogDescription>
+            This permanently removes{" "}
+            <span className="font-medium text-slate-700">{incident.title}</span>{" "}
+            from the log. This cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form action={formAction}>
+          <input type="hidden" name="id" value={incident.id} />
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" size="sm" />}
+            >
+              Cancel
+            </DialogClose>
+            <DeleteSubmitButton />
+          </DialogFooter>
+        </form>
+
+        <p
+          aria-live="polite"
+          className={
+            state.status === "error"
+              ? "text-sm font-medium text-red-700"
+              : "text-sm font-medium text-emerald-700"
+          }
+        >
+          {state.message}
+        </p>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { IncidentDeleteDialog } from "@/components/incident-delete-dialog";
 import { IncidentLifecycleDialog } from "@/components/incident-lifecycle-dialog";
 import { SectionHeading } from "@/components/page-heading";
 import {
@@ -184,6 +185,7 @@ function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
                 </Badge>
               )}
               <IncidentLifecycleDialog incident={incident} />
+              <IncidentDeleteDialog incident={incident} />
             </div>
           </div>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">

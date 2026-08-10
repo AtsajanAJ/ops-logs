@@ -140,3 +140,28 @@ export async function reopenIncident(
     };
   }
 }
+// Delete Incident Button
+export async function deleteIncident(
+  _previousState: IncidentLifecycleActionState,
+  formData: FormData,
+): Promise<IncidentLifecycleActionState> {
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) {
+    return { status: "error", message: "The incident ID is invalid." };
+  }
+
+  try {
+    await getDb().incidentLog.delete({
+      where: { id },
+    });
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+    return { status: "success", message: "Incident deleted." };
+  } catch (error: unknown) {
+    console.error("Failed to delete incident", error);
+    return {
+      status: "error",
+      message: "The incident could not be deleted. Try again.",
+    };
+  }
+}
