@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { type IncidentView, parseTags } from "@/lib/incidents";
+import { entryTypeLabels, type IncidentView, parseTags } from "@/lib/incidents";
 import {
   createSafeIncident,
   initialSummaryActionState,
@@ -67,7 +67,7 @@ async function fetchRangeIncidents(range: DateRange): Promise<IncidentView[]> {
       "message" in payload &&
       typeof payload.message === "string"
         ? payload.message
-        : "Incidents could not be loaded.";
+        : "Ops entries could not be loaded.";
     throw new Error(message);
   }
 
@@ -174,10 +174,10 @@ function PrivacyEditor({
       <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 p-8 text-center">
         <CalendarRange className="mx-auto size-6 text-slate-400" />
         <h3 className="mt-3 font-semibold text-slate-900">
-          No incidents in this range
+          No entries in this range
         </h3>
         <p className="mt-1 text-sm text-slate-500">
-          Choose dates containing at least one incident.
+          Choose dates containing at least one incident or service.
         </p>
       </div>
     );
@@ -214,7 +214,7 @@ function PrivacyEditor({
             className="border-0"
           >
             <legend className="sr-only">
-              Incident {index + 1} of {incidents.length}: {incident.title}
+              Entry {index + 1} of {incidents.length}: {incident.title}
             </legend>
 
             <button
@@ -234,8 +234,13 @@ function PrivacyEditor({
                 </span>
                 <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
-                    {incident.severity.toLowerCase()}
+                    {entryTypeLabels[incident.entryType]}
                   </span>
+                  {incident.entryType === "INCIDENT" && (
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
+                      {incident.severity.toLowerCase()}
+                    </span>
+                  )}
                   {incident.systemArea && <span>{incident.systemArea}</span>}
                 </span>
               </span>
@@ -491,7 +496,7 @@ export function SummaryGenerator({
           {incidentsQuery.isFetching ? (
             <div
               className="space-y-4 rounded-xl border border-slate-200 bg-white p-5"
-              aria-label="Preparing incident preview"
+              aria-label="Preparing entry preview"
             >
               <Skeleton className="h-5 w-36" />
               <Skeleton className="h-11 w-full" />

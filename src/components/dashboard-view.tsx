@@ -2,10 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertOctagon,
   CircleDot,
   FileWarning,
   RefreshCw,
+  Wrench,
 } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import {
@@ -161,7 +161,7 @@ export function DashboardView(): React.JSX.Element {
   const weeklySummary = data.weeklyTrend
     .map(
       (week) =>
-        `${week.label}: ${week.low + week.medium + week.high + week.critical} incidents`,
+        `${week.label}: ${week.total} incidents, ${week.services} services`,
     )
     .join("; ");
   const severitySummary = data.severityBreakdown
@@ -179,14 +179,20 @@ export function DashboardView(): React.JSX.Element {
   return (
     <div className="grid gap-6">
       <section
-        aria-label="Incident metrics"
+        aria-label="Ops metrics"
         className="grid overflow-hidden rounded-xl border border-slate-200 bg-white sm:grid-cols-3 sm:divide-x sm:divide-slate-200"
       >
         <MetricCard
-          label="Total incidents"
+          label="Incidents"
           value={data.totalIncidents}
           detail="Across the last 8 weeks"
           icon={<CircleDot aria-hidden="true" className="size-4" />}
+        />
+        <MetricCard
+          label="Services"
+          value={data.totalServices}
+          detail="Logged service work"
+          icon={<Wrench aria-hidden="true" className="size-4" />}
         />
         <MetricCard
           label="Unresolved"
@@ -194,21 +200,17 @@ export function DashboardView(): React.JSX.Element {
           detail="Still marked open"
           icon={<FileWarning aria-hidden="true" className="size-4" />}
         />
-        <MetricCard
-          label="High priority"
-          value={data.highPriorityIncidents}
-          detail="High and critical severity"
-          icon={<AlertOctagon aria-hidden="true" className="size-4" />}
-        />
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(18rem,0.75fr)]">
         <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="mb-4 sm:mb-5">
             <h2 className="text-lg font-semibold text-slate-950">
-              Eight-week incident trend
+              Eight-week ops trend
             </h2>
-            <p className="mt-1 text-sm text-slate-500">Weekly volume by severity.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Incident volume by severity, plus service counts.
+            </p>
           </div>
           <p className="sr-only">{weeklySummary}</p>
           <div
@@ -274,6 +276,12 @@ export function DashboardView(): React.JSX.Element {
                   fill="var(--severity-critical)"
                   radius={[4, 4, 0, 0]}
                 />
+                <Bar
+                  dataKey="services"
+                  name="Services"
+                  fill="#0ea5e9"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -282,9 +290,11 @@ export function DashboardView(): React.JSX.Element {
         <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="mb-4 sm:mb-5">
             <h2 className="text-lg font-semibold text-slate-950">
-              Severity breakdown
+              Incident severity
             </h2>
-            <p className="mt-1 text-sm text-slate-500">Incident count by priority.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Incident count by priority (services excluded).
+            </p>
           </div>
           <p className="sr-only">{severitySummary}</p>
           <div

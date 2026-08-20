@@ -25,6 +25,7 @@ import {
   severityLabels,
   severityValues,
   SYSTEM_AREAS,
+  type EntryTypeValue,
 } from "@/lib/incidents";
 import { writableSitesFor } from "@/lib/permissions";
 import { siteLabels } from "@/lib/sites";
@@ -76,6 +77,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   const writableSites = user ? writableSitesFor(user) : [];
   const defaultSite = writableSites[0] ?? "BANGKOK";
   const siteLocked = writableSites.length === 1;
+  const [entryType, setEntryType] = useState<EntryTypeValue>("INCIDENT");
   const titleId = `${idPrefix}title`;
   const titleErrorId = `${idPrefix}title-error`;
   const entryTypeId = `${idPrefix}entry-type`;
@@ -89,6 +91,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
     if (state.status !== "success") return;
 
     formRef.current?.reset();
+    setEntryType("INCIDENT");
     void queryClient.invalidateQueries({ queryKey: ["incidents"] });
   }, [queryClient, state]);
 
@@ -138,12 +141,23 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div
+        className={cn(
+          "grid gap-4",
+          entryType === "SERVICE" ? "sm:grid-cols-2" : "sm:grid-cols-3",
+        )}
+      >
         <div className="grid gap-2">
           <Label htmlFor={entryTypeId}>
             Type <span className="text-red-600" aria-hidden="true">*</span>
           </Label>
-          <Select name="entryType" defaultValue="INCIDENT">
+          <Select
+            name="entryType"
+            value={entryType}
+            onValueChange={(value) =>
+              setEntryType((value as EntryTypeValue | null) ?? "INCIDENT")
+            }
+          >
             <SelectTrigger
               id={entryTypeId}
               className="h-11! w-full bg-white"
@@ -157,9 +171,9 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {entryTypeValues.map((entryType) => (
-                <SelectItem key={entryType} value={entryType}>
-                  {entryTypeLabels[entryType]}
+              {entryTypeValues.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {entryTypeLabels[value]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -167,33 +181,35 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
           <FieldError message={state.fieldErrors.entryType} />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor={severityId}>
-            Severity <span className="text-red-600" aria-hidden="true">*</span>
-          </Label>
-          <Select name="severity" defaultValue="LOW">
-            <SelectTrigger
-              id={severityId}
-              className="h-11! w-full bg-white"
-              aria-invalid={Boolean(state.fieldErrors.severity)}
-            >
-              <SelectValue>
-                {(value) =>
-                  severityLabels[value as keyof typeof severityLabels] ??
-                  severityLabels.LOW
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {severityValues.map((severity) => (
-                <SelectItem key={severity} value={severity}>
-                  {severityLabels[severity]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FieldError message={state.fieldErrors.severity} />
-        </div>
+        {entryType === "INCIDENT" && (
+          <div className="grid gap-2">
+            <Label htmlFor={severityId}>
+              Severity <span className="text-red-600" aria-hidden="true">*</span>
+            </Label>
+            <Select name="severity" defaultValue="LOW">
+              <SelectTrigger
+                id={severityId}
+                className="h-11! w-full bg-white"
+                aria-invalid={Boolean(state.fieldErrors.severity)}
+              >
+                <SelectValue>
+                  {(value) =>
+                    severityLabels[value as keyof typeof severityLabels] ??
+                    severityLabels.LOW
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {severityValues.map((severity) => (
+                  <SelectItem key={severity} value={severity}>
+                    {severityLabels[severity]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldError message={state.fieldErrors.severity} />
+          </div>
+        )}
 
         <div className="grid gap-2">
           <Label htmlFor={siteId}>

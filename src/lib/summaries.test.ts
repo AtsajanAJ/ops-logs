@@ -26,6 +26,18 @@ const safeInput: GenerateSummaryInput = {
       tags: ["vpn", "access"],
       createdAt: "2026-07-22T04:00:00.000Z",
     },
+    {
+      id: "service-private-id",
+      title: "Firewall patch",
+      description: "Applied vendor update.",
+      severity: "LOW",
+      entryType: "SERVICE",
+      systemArea: "Site A / Network",
+      rootCause: null,
+      resolution: null,
+      tags: ["update"],
+      createdAt: "2026-07-23T04:00:00.000Z",
+    },
   ],
 };
 
@@ -54,9 +66,16 @@ describe("summary privacy boundary", () => {
     expect(prompt).toContain("Site A VPN outage");
     expect(prompt).toContain("Configuration drift");
     expect(prompt).toContain('"entryType": "INCIDENT"');
+    expect(prompt).toContain('"entryType": "SERVICE"');
+    expect(prompt).toContain("1 incidents, 1 services");
+    expect(prompt).toContain("Service work");
     expect(prompt).toContain("Do not invent details");
     expect(prompt).not.toContain("incident-private-id");
+    expect(prompt).not.toContain("service-private-id");
     expect(prompt).not.toContain("confirmedAnonymized");
+    expect(prompt).not.toMatch(
+      /"entryType": "SERVICE"[\s\S]*?"severity"/,
+    );
   });
 });
 

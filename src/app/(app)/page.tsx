@@ -17,11 +17,11 @@ export default async function Home(): Promise<React.JSX.Element> {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <PageHeading
+      {/* <PageHeading
         title="Ops log"
         description="Capture incidents and service work while the details are fresh, then search and resolve them from one place."
         className="mb-6"
-      />
+      /> */}
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(20rem,0.76fr)_minmax(0,1.24fr)]">
         <Card className="hidden border border-slate-200 bg-white py-0 shadow-sm ring-0 lg:sticky lg:top-6 lg:block">

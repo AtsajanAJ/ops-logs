@@ -9,7 +9,7 @@ export default function SummariesPage(): React.JSX.Element {
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <PageHeading
         title="Prepare weekly report"
-        description="Anonymize incident data, generate a Gemini draft, then save it to your weekly reports library."
+        description="Anonymize ops entries (incidents and services), generate a Gemini draft, then save it to your weekly reports library."
         className="mb-8"
       />
 

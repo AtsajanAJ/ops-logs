@@ -19,7 +19,12 @@ export async function GET(): Promise<NextResponse> {
     const reference = new Date();
     const incidents = await getDb().incidentLog.findMany({
       where: { createdAt: { gte: getDashboardStart(reference) } },
-      select: { createdAt: true, severity: true, resolved: true },
+      select: {
+        createdAt: true,
+        severity: true,
+        resolved: true,
+        entryType: true,
+      },
       orderBy: { createdAt: "asc" },
     });
 

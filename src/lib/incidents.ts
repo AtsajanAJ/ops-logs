@@ -135,36 +135,61 @@ export const resolveIncidentSchema = z.object({
     .max(2_000, "Keep the resolution under 2,000 characters."),
 });
 
-export const incidentInputSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "Add a short incident title.")
-    .max(120, "Keep the title under 120 characters."),
-  description: z
-    .string()
-    .trim()
-    .min(1, "Describe what happened.")
-    .max(2_000, "Keep the description under 2,000 characters."),
-  severity: z.enum(severityValues, {
-    error: "Choose a valid severity.",
-  }),
-  entryType: z.enum(entryTypeValues, {
-    error: "Choose Incident or Service.",
-  }),
-  systemArea: z
-    .string()
-    .trim()
-    .max(80, "Keep the system area under 80 characters.")
-    .transform((value) => value || undefined),
-  site: z.enum(siteValues, {
-    error: "Choose a site.",
-  }),
-  tags: z
-    .string()
-    .max(250, "Keep the tag list under 250 characters.")
-    .transform(parseTags),
-});
+export const incidentInputSchema = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(1, "Add a short incident title.")
+      .max(120, "Keep the title under 120 characters."),
+    description: z
+      .string()
+      .trim()
+      .min(1, "Describe what happened.")
+      .max(2_000, "Keep the description under 2,000 characters."),
+    severity: z.string().optional(),
+    entryType: z.enum(entryTypeValues, {
+      error: "Choose Incident or Service.",
+    }),
+    systemArea: z
+      .string()
+      .trim()
+      .max(80, "Keep the system area under 80 characters.")
+      .transform((value) => value || undefined),
+    site: z.enum(siteValues, {
+      error: "Choose a site.",
+    }),
+    tags: z
+      .string()
+      .max(250, "Keep the tag list under 250 characters.")
+      .transform(parseTags),
+  })
+  .superRefine((data, context) => {
+    if (data.entryType !== "INCIDENT") return;
+
+    if (
+      !data.severity ||
+      !(severityValues as readonly string[]).includes(data.severity)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Choose a valid severity.",
+        path: ["severity"],
+      });
+    }
+  })
+  .transform((data) => ({
+    title: data.title,
+    description: data.description,
+    entryType: data.entryType,
+    systemArea: data.systemArea,
+    site: data.site,
+    tags: data.tags,
+    severity:
+      data.entryType === "SERVICE"
+        ? ("LOW" as const)
+        : (data.severity as SeverityValue),
+  }));
 
 export const incidentFilterSchema = z
   .object({

@@ -35,11 +35,14 @@ import {
   severityLabels,
   severityValues,
   SYSTEM_AREAS,
+  type EntryTypeValue,
+  type IncidentActionState,
   type IncidentDraft,
 } from "@/lib/incidents";
 import { writableSitesFor } from "@/lib/permissions";
-import { siteLabels, siteValues } from "@/lib/sites";
+import { siteLabels, siteValues, type SiteValue } from "@/lib/sites";
 import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
+import { cn } from "@/lib/utils";
 
 const severityFallback = severityLabels.MEDIUM;
 
@@ -84,6 +87,245 @@ function SaveButton(): React.JSX.Element {
       )}
       {pending ? "Saving…" : "Log incident"}
     </Button>
+  );
+}
+
+interface AiDraftFormProps {
+  idPrefix: string;
+  draft: IncidentDraft;
+  draftSite: SiteValue;
+  initialEntryType: EntryTypeValue;
+  siteLocked: boolean;
+  writableSites: SiteValue[];
+  saveAction: (payload: FormData) => void;
+  saveState: IncidentActionState;
+  onStartOver: () => void;
+  saveFormRef: React.RefObject<HTMLFormElement | null>;
+}
+
+function AiDraftForm({
+  idPrefix,
+  draft,
+  draftSite,
+  initialEntryType,
+  siteLocked,
+  writableSites,
+  saveAction,
+  saveState,
+  onStartOver,
+  saveFormRef,
+}: AiDraftFormProps): React.JSX.Element {
+  const [entryType, setEntryType] = useState<EntryTypeValue>(initialEntryType);
+
+  return (
+    <div className="grid gap-4">
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <p className="text-sm font-medium text-emerald-900">
+          AI draft ready — review and edit before saving.
+        </p>
+      </div>
+
+      <form ref={saveFormRef} action={saveAction} className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor={`${idPrefix}draft-title`}>Title</Label>
+          <Input
+            id={`${idPrefix}draft-title`}
+            name="title"
+            defaultValue={draft.title}
+            maxLength={120}
+            required
+            className="h-11 bg-white"
+          />
+        </div>
+
+        <div
+          className={cn(
+            "grid gap-4",
+            entryType === "SERVICE" ? "sm:grid-cols-2" : "sm:grid-cols-3",
+          )}
+        >
+          <div className="grid gap-2">
+            <Label htmlFor={`${idPrefix}draft-entry-type`}>Type</Label>
+            <Select
+              name="entryType"
+              value={entryType}
+              onValueChange={(value) =>
+                setEntryType((value as EntryTypeValue | null) ?? "INCIDENT")
+              }
+            >
+              <SelectTrigger
+                id={`${idPrefix}draft-entry-type`}
+                className="h-11! w-full bg-white"
+              >
+                <SelectValue>
+                  {(value) =>
+                    entryTypeLabels[value as keyof typeof entryTypeLabels] ??
+                    entryTypeLabels.INCIDENT
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {entryTypeValues.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {entryTypeLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {entryType === "INCIDENT" && (
+            <div className="grid gap-2">
+              <Label htmlFor={`${idPrefix}draft-severity`}>Severity</Label>
+              <Select name="severity" defaultValue={draft.severity}>
+                <SelectTrigger
+                  id={`${idPrefix}draft-severity`}
+                  className="h-11! w-full bg-white"
+                >
+                  <SelectValue>
+                    {(value) =>
+                      severityLabels[value as keyof typeof severityLabels] ??
+                      severityFallback
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {severityValues.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {severityLabels[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid gap-2">
+            <Label htmlFor={`${idPrefix}draft-site`}>Site</Label>
+            {siteLocked ? (
+              <>
+                <input type="hidden" name="site" value={draftSite} />
+                <Input
+                  id={`${idPrefix}draft-site`}
+                  value={siteLabels[draftSite]}
+                  readOnly
+                  className="h-11 bg-slate-50"
+                />
+              </>
+            ) : (
+              <Select name="site" defaultValue={draftSite}>
+                <SelectTrigger
+                  id={`${idPrefix}draft-site`}
+                  className="h-11! w-full bg-white"
+                >
+                  <SelectValue>
+                    {(value) =>
+                      siteLabels[value as keyof typeof siteLabels] ??
+                      siteLabels.BANGKOK
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {writableSites.map((site) => (
+                    <SelectItem key={site} value={site}>
+                      {siteLabels[site]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor={`${idPrefix}draft-area`}>System area</Label>
+          <Select
+            name="systemArea"
+            defaultValue={
+              draft.systemArea &&
+              SYSTEM_AREAS.includes(
+                draft.systemArea as (typeof SYSTEM_AREAS)[number],
+              )
+                ? draft.systemArea
+                : draft.systemArea
+                  ? "Other"
+                  : undefined
+            }
+          >
+            <SelectTrigger
+              id={`${idPrefix}draft-area`}
+              className="h-11! w-full bg-white"
+            >
+              <SelectValue placeholder="Select system area">
+                {(value) => (value ? String(value) : "Select system area")}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {SYSTEM_AREAS.map((area) => (
+                <SelectItem key={area} value={area}>
+                  {area}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor={`${idPrefix}draft-desc`}>Description</Label>
+          <Textarea
+            id={`${idPrefix}draft-desc`}
+            name="description"
+            defaultValue={draft.description}
+            maxLength={2_000}
+            rows={5}
+            required
+            className="min-h-28 resize-y bg-white"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor={`${idPrefix}draft-tags`}>Tags</Label>
+          <Input
+            id={`${idPrefix}draft-tags`}
+            name="tags"
+            defaultValue={draft.tags.join(", ")}
+            maxLength={250}
+            className="h-11 bg-white"
+          />
+          <p className="text-xs text-slate-500">
+            Separate up to 8 tags with commas. Prefer: outage, slow, timeout,
+            error, disconnect, login, permission, config, update, hardware,
+            vendor, workaround, intermittent.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onStartOver}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-950"
+            >
+              <RotateCcw aria-hidden="true" className="size-3.5" />
+              Start over
+            </button>
+            {saveState.message && (
+              <p
+                aria-live="polite"
+                className={
+                  saveState.status === "error"
+                    ? "text-sm font-medium text-red-700"
+                    : "text-sm font-medium text-emerald-700"
+                }
+              >
+                {saveState.message}
+              </p>
+            )}
+          </div>
+          <SaveButton />
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -145,209 +387,25 @@ export function IncidentAiForm({
 
   if (draft) {
     const draftSite =
-      draft.site && siteValues.includes(draft.site) && writableSites.includes(draft.site)
+      draft.site &&
+      siteValues.includes(draft.site) &&
+      writableSites.includes(draft.site)
         ? draft.site
         : defaultSite;
 
     return (
-      <div className="grid gap-4">
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <p className="text-sm font-medium text-emerald-900">
-            AI draft ready — review and edit before saving.
-          </p>
-        </div>
-
-        <form ref={saveFormRef} action={saveAction} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor={`${idPrefix}draft-title`}>Title</Label>
-            <Input
-              id={`${idPrefix}draft-title`}
-              name="title"
-              defaultValue={draft.title}
-              maxLength={120}
-              required
-              className="h-11 bg-white"
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="grid gap-2">
-              <Label htmlFor={`${idPrefix}draft-entry-type`}>Type</Label>
-              <Select
-                name="entryType"
-                defaultValue={draft.entryType ?? "INCIDENT"}
-              >
-                <SelectTrigger
-                  id={`${idPrefix}draft-entry-type`}
-                  className="h-11! w-full bg-white"
-                >
-                  <SelectValue>
-                    {(value) =>
-                      entryTypeLabels[value as keyof typeof entryTypeLabels] ??
-                      entryTypeLabels.INCIDENT
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {entryTypeValues.map((entryType) => (
-                    <SelectItem key={entryType} value={entryType}>
-                      {entryTypeLabels[entryType]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor={`${idPrefix}draft-severity`}>Severity</Label>
-              <Select name="severity" defaultValue={draft.severity}>
-                <SelectTrigger
-                  id={`${idPrefix}draft-severity`}
-                  className="h-11! w-full bg-white"
-                >
-                  <SelectValue>
-                    {(value) =>
-                      severityLabels[value as keyof typeof severityLabels] ??
-                      severityFallback
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {severityValues.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {severityLabels[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor={`${idPrefix}draft-site`}>Site</Label>
-              {siteLocked ? (
-                <>
-                  <input type="hidden" name="site" value={draftSite} />
-                  <Input
-                    id={`${idPrefix}draft-site`}
-                    value={siteLabels[draftSite]}
-                    readOnly
-                    className="h-11 bg-slate-50"
-                  />
-                </>
-              ) : (
-                <Select name="site" defaultValue={draftSite}>
-                  <SelectTrigger
-                    id={`${idPrefix}draft-site`}
-                    className="h-11! w-full bg-white"
-                  >
-                    <SelectValue>
-                      {(value) =>
-                        siteLabels[value as keyof typeof siteLabels] ??
-                        siteLabels.BANGKOK
-                      }
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {writableSites.map((site) => (
-                      <SelectItem key={site} value={site}>
-                        {siteLabels[site]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-              <Label htmlFor={`${idPrefix}draft-area`}>System area</Label>
-              <Select
-                name="systemArea"
-                defaultValue={
-                  draft.systemArea &&
-                  SYSTEM_AREAS.includes(
-                    draft.systemArea as (typeof SYSTEM_AREAS)[number],
-                  )
-                    ? draft.systemArea
-                    : draft.systemArea
-                      ? "Other"
-                      : undefined
-                }
-              >
-                <SelectTrigger
-                  id={`${idPrefix}draft-area`}
-                  className="h-11! w-full bg-white"
-                >
-                  <SelectValue placeholder="Select system area">
-                    {(value) => (value ? String(value) : "Select system area")}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {SYSTEM_AREAS.map((area) => (
-                    <SelectItem key={area} value={area}>
-                      {area}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor={`${idPrefix}draft-desc`}>Description</Label>
-            <Textarea
-              id={`${idPrefix}draft-desc`}
-              name="description"
-              defaultValue={draft.description}
-              maxLength={2_000}
-              rows={5}
-              required
-              className="min-h-28 resize-y bg-white"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor={`${idPrefix}draft-tags`}>Tags</Label>
-            <Input
-              id={`${idPrefix}draft-tags`}
-              name="tags"
-              defaultValue={draft.tags.join(", ")}
-              maxLength={250}
-              className="h-11 bg-white"
-            />
-            <p className="text-xs text-slate-500">
-              Separate up to 8 tags with commas. Prefer: outage, slow, timeout,
-              error, disconnect, login, permission, config, update, hardware,
-              vendor, workaround, intermittent.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleStartOver}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-950"
-              >
-                <RotateCcw aria-hidden="true" className="size-3.5" />
-                Start over
-              </button>
-              {saveState.message && (
-                <p
-                  aria-live="polite"
-                  className={
-                    saveState.status === "error"
-                      ? "text-sm font-medium text-red-700"
-                      : "text-sm font-medium text-emerald-700"
-                  }
-                >
-                  {saveState.message}
-                </p>
-              )}
-            </div>
-            <SaveButton />
-          </div>
-        </form>
-      </div>
+      <AiDraftForm
+        idPrefix={idPrefix}
+        draft={draft}
+        draftSite={draftSite}
+        initialEntryType={draft.entryType ?? "INCIDENT"}
+        siteLocked={siteLocked}
+        writableSites={writableSites}
+        saveAction={saveAction}
+        saveState={saveState}
+        onStartOver={handleStartOver}
+        saveFormRef={saveFormRef}
+      />
     );
   }
 
@@ -358,8 +416,8 @@ export function IncidentAiForm({
         <div>
           <p className="font-semibold">Remove real identifiers first</p>
           <p className="mt-0.5 text-amber-900">
-            Don't include real hospital, patient, or client names — use generic
-            labels like "Site A" or "Client B".
+            Don&apos;t include real hospital, patient, or client names — use
+            generic labels like &quot;Site A&quot; or &quot;Client B&quot;.
           </p>
         </div>
       </div>

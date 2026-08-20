@@ -1,15 +1,17 @@
-import type { SeverityValue } from "@/lib/incidents";
+import type { EntryTypeValue, SeverityValue } from "@/lib/incidents";
 
 export interface DashboardIncident {
   createdAt: Date | string;
   severity: SeverityValue;
   resolved: boolean;
+  entryType: EntryTypeValue;
 }
 
 export interface WeeklyIncidentPoint {
   weekStart: string;
   label: string;
   total: number;
+  services: number;
   critical: number;
   high: number;
   medium: number;
@@ -23,8 +25,8 @@ export interface SeverityPoint {
 
 export interface DashboardData {
   totalIncidents: number;
+  totalServices: number;
   unresolvedIncidents: number;
-  highPriorityIncidents: number;
   weeklyTrend: WeeklyIncidentPoint[];
   severityBreakdown: SeverityPoint[];
 }
@@ -78,6 +80,7 @@ export function buildDashboardData(
       weekStart,
       label: weekLabelFormatter.format(start),
       total: 0,
+      services: 0,
       critical: 0,
       high: 0,
       medium: 0,
@@ -92,8 +95,8 @@ export function buildDashboardData(
     CRITICAL: 0,
   };
   let totalIncidents = 0;
+  let totalServices = 0;
   let unresolvedIncidents = 0;
-  let highPriorityIncidents = 0;
 
   for (const incident of incidents) {
     const createdAt = new Date(incident.createdAt);
@@ -103,23 +106,24 @@ export function buildDashboardData(
     const point = points.get(weekStart);
     if (!point) continue;
 
+    if (!incident.resolved) unresolvedIncidents += 1;
+
+    if (incident.entryType === "SERVICE") {
+      totalServices += 1;
+      point.services += 1;
+      continue;
+    }
+
     point.total += 1;
     point[severityKeys[incident.severity]] += 1;
     severityCounts[incident.severity] += 1;
     totalIncidents += 1;
-    if (!incident.resolved) unresolvedIncidents += 1;
-    if (
-      incident.severity === "HIGH" ||
-      incident.severity === "CRITICAL"
-    ) {
-      highPriorityIncidents += 1;
-    }
   }
 
   return {
     totalIncidents,
+    totalServices,
     unresolvedIncidents,
-    highPriorityIncidents,
     weeklyTrend: [...points.values()],
     severityBreakdown: (
       ["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const

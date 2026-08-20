@@ -42,6 +42,32 @@ describe("incident validation", () => {
     });
   });
 
+  it("defaults service severity to LOW when omitted", () => {
+    const result = incidentInputSchema.parse({
+      title: "Patch firewall",
+      description: "Applied vendor update on Site A.",
+      entryType: "SERVICE",
+      systemArea: "",
+      site: "BANGKOK",
+      tags: "update",
+    });
+
+    expect(result.severity).toBe("LOW");
+    expect(result.entryType).toBe("SERVICE");
+  });
+
+  it("requires severity for incidents", () => {
+    expect(
+      incidentInputSchema.safeParse({
+        title: "Outage",
+        description: "Network down",
+        entryType: "INCIDENT",
+        site: "BANGKOK",
+        tags: "",
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects invalid entry types", () => {
     expect(
       incidentInputSchema.safeParse({

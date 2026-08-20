@@ -76,7 +76,7 @@ async function fetchIncidents(
     limit: "10",
     entryType: filters.entryType,
   });
-  if (filters.severity !== "ALL") {
+  if (filters.severity !== "ALL" && filters.entryType === "INCIDENT") {
     params.set("severity", filters.severity);
   }
   if (filters.site !== "ALL") {
@@ -169,22 +169,26 @@ function IncidentCard({
           >
             {dateFormatter.format(new Date(incident.createdAt))}
           </time>
-          <Badge
-            variant="outline"
-            className="mt-0.5 gap-1.5 border-slate-200 bg-white text-slate-700 sm:mt-2"
-          >
-            <span
-              aria-hidden="true"
-              className={cn("size-2 rounded-full", severityStyles[incident.severity])}
-            />
-            {severityLabels[incident.severity]}
-          </Badge>
-          {incident.entryType === "SERVICE" && (
+          {incident.entryType === "SERVICE" ? (
             <Badge
               variant="secondary"
-              className="mt-2 bg-sky-50 text-sky-800"
+              className="mt-0.5 bg-sky-50 text-sky-800 sm:mt-2"
             >
               {entryTypeLabels.SERVICE}
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="mt-0.5 gap-1.5 border-slate-200 bg-white text-slate-700 sm:mt-2"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "size-2 rounded-full",
+                  severityStyles[incident.severity],
+                )}
+              />
+              {severityLabels[incident.severity]}
             </Badge>
           )}
         </div>
@@ -263,7 +267,7 @@ export function IncidentList(): React.JSX.Element {
     queryFn: fetchIncidentFacets,
   });
   const activeFilterCount = [
-    severity !== "ALL",
+    entryType === "INCIDENT" && severity !== "ALL",
     site !== "ALL",
     tag !== "ALL",
     systemArea !== "ALL",
@@ -304,7 +308,10 @@ export function IncidentList(): React.JSX.Element {
             <button
               key={value}
               type="button"
-              onClick={() => setEntryType(value)}
+              onClick={() => {
+                setEntryType(value);
+                if (value === "SERVICE") setSeverity("ALL");
+              }}
               aria-pressed={entryType === value}
               className={cn(
                 "flex flex-1 items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
@@ -358,37 +365,42 @@ export function IncidentList(): React.JSX.Element {
         <div
           id="incident-filters"
           className={cn(
-            "mt-3 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid md:grid-cols-2 xl:grid-cols-[repeat(4,minmax(8rem,1fr))_auto]",
+            "mt-3 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid md:grid-cols-2",
+            entryType === "INCIDENT"
+              ? "xl:grid-cols-[repeat(4,minmax(8rem,1fr))_auto]"
+              : "xl:grid-cols-[repeat(3,minmax(8rem,1fr))_auto]",
             showFilters ? "grid" : "hidden",
           )}
         >
-          <Select
-            value={severity}
-            onValueChange={(value) =>
-              setSeverity((value ?? "ALL") as SeverityFilter)
-            }
-          >
-            <SelectTrigger
-              aria-label="Filter by severity"
-              className="h-9! w-full bg-white"
+          {entryType === "INCIDENT" && (
+            <Select
+              value={severity}
+              onValueChange={(value) =>
+                setSeverity((value ?? "ALL") as SeverityFilter)
+              }
             >
-              <SelectValue>
-                {(value) =>
-                  value === "ALL"
-                    ? "All severities"
-                    : severityLabels[value as SeverityValue]
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="ALL">All severities</SelectItem>
-              {severityValues.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {severityLabels[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                aria-label="Filter by severity"
+                className="h-9! w-full bg-white"
+              >
+                <SelectValue>
+                  {(value) =>
+                    value === "ALL"
+                      ? "All severities"
+                      : severityLabels[value as SeverityValue]
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="ALL">All severities</SelectItem>
+                {severityValues.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {severityLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           <Select
             value={site}
