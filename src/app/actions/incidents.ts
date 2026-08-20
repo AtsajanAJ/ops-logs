@@ -17,6 +17,12 @@ import {
   type IncidentFieldName,
   type IncidentLifecycleActionState,
 } from "@/lib/incidents";
+import {
+  canMutateSummaries,
+  canWriteIncident,
+} from "@/lib/permissions";
+import type { Site } from "@/generated/prisma/client";
+import { getCurrentUser } from "@/lib/session";
 import { maskSensitiveText } from "@/lib/summaries";
 
 const fieldNames = [
@@ -24,6 +30,7 @@ const fieldNames = [
   "description",
   "severity",
   "systemArea",
+  "site",
   "tags",
 ] as const;
 
@@ -32,15 +39,44 @@ function formValue(formData: FormData, key: IncidentFieldName): string {
   return typeof value === "string" ? value : "";
 }
 
+async function requireWritableSite(
+  site: Site,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, message: "Sign in to continue." };
+  }
+  if (!canWriteIncident(user, site)) {
+    return {
+      ok: false,
+      message:
+        user.role === "VISITOR"
+          ? "Visitors are read-only. Ask an admin to grant Member access."
+          : "You can only modify incidents for your home site.",
+    };
+  }
+  return { ok: true };
+}
+
 export async function createIncident(
   _previousState: IncidentActionState,
   formData: FormData,
 ): Promise<IncidentActionState> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return {
+      status: "error",
+      message: "Sign in to continue.",
+      fieldErrors: {},
+    };
+  }
+
   const parsed = incidentInputSchema.safeParse({
     title: formValue(formData, "title"),
     description: formValue(formData, "description"),
     severity: formValue(formData, "severity"),
     systemArea: formValue(formData, "systemArea"),
+    site: formValue(formData, "site"),
     tags: formValue(formData, "tags"),
   });
 
@@ -60,9 +96,23 @@ export async function createIncident(
     };
   }
 
+  if (!canWriteIncident(user, parsed.data.site)) {
+    return {
+      status: "error",
+      message:
+        user.role === "VISITOR"
+          ? "Visitors are read-only. Ask an admin to grant Member access."
+          : "You can only log incidents for your home site.",
+      fieldErrors: {},
+    };
+  }
+
   try {
     await getDb().incidentLog.create({
-      data: parsed.data,
+      data: {
+        ...parsed.data,
+        createdById: user.id,
+      },
     });
     revalidatePath("/");
 
@@ -102,6 +152,19 @@ export async function resolveIncident(
   }
 
   try {
+    const existing = await getDb().incidentLog.findUnique({
+      where: { id: parsed.data.id },
+      select: { site: true },
+    });
+    if (!existing) {
+      return { status: "error", message: "Incident not found." };
+    }
+
+    const access = await requireWritableSite(existing.site);
+    if (!access.ok) {
+      return { status: "error", message: access.message };
+    }
+
     await getDb().incidentLog.update({
       where: { id: parsed.data.id },
       data: {
@@ -128,11 +191,24 @@ export async function reopenIncident(
   formData: FormData,
 ): Promise<IncidentLifecycleActionState> {
   const id = formData.get("id");
-  if (typeof id !== "string" || !id) {
+  if (typeof id !== "string" || id.length === 0) {
     return { status: "error", message: "The incident ID is invalid." };
   }
 
   try {
+    const existing = await getDb().incidentLog.findUnique({
+      where: { id },
+      select: { site: true },
+    });
+    if (!existing) {
+      return { status: "error", message: "Incident not found." };
+    }
+
+    const access = await requireWritableSite(existing.site);
+    if (!access.ok) {
+      return { status: "error", message: access.message };
+    }
+
     await getDb().incidentLog.update({
       where: { id },
       data: { resolved: false, resolvedAt: null },
@@ -148,10 +224,22 @@ export async function reopenIncident(
     };
   }
 }
+
 export async function draftIncidentFromNotes(
   _previousState: IncidentDraftActionState,
   formData: FormData,
 ): Promise<IncidentDraftActionState> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { status: "error", message: "Sign in to continue." };
+  }
+  if (!canMutateSummaries(user)) {
+    return {
+      status: "error",
+      message: "Visitors are read-only. Ask an admin to grant Member access.",
+    };
+  }
+
   const parsed = incidentDraftInputSchema.safeParse({
     notes: typeof formData.get("notes") === "string" ? formData.get("notes") : "",
     confirmedAnonymized:
@@ -193,11 +281,24 @@ export async function deleteIncident(
   formData: FormData,
 ): Promise<IncidentLifecycleActionState> {
   const id = formData.get("id");
-  if (typeof id !== "string" || !id) {
+  if (typeof id !== "string" || id.length === 0) {
     return { status: "error", message: "The incident ID is invalid." };
   }
 
   try {
+    const existing = await getDb().incidentLog.findUnique({
+      where: { id },
+      select: { site: true },
+    });
+    if (!existing) {
+      return { status: "error", message: "Incident not found." };
+    }
+
+    const access = await requireWritableSite(existing.site);
+    if (!access.ok) {
+      return { status: "error", message: access.message };
+    }
+
     await getDb().incidentLog.delete({
       where: { id },
     });

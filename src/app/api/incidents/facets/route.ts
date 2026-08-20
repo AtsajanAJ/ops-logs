@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 
+import { requireApiUser } from "@/lib/api-auth";
 import { getDb } from "@/lib/db";
 import type { IncidentFacets } from "@/lib/incidents";
 
 export const runtime = "nodejs";
 
 export async function GET(): Promise<NextResponse> {
+  const authResult = await requireApiUser();
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+
   try {
     const incidents = await getDb().incidentLog.findMany({
       select: { systemArea: true, tags: true },

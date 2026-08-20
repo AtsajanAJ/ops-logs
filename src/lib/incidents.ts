@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { siteValues } from "@/lib/sites";
+
 export const severityValues = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 
 export type SeverityValue = (typeof severityValues)[number];
@@ -84,6 +86,7 @@ export type IncidentFieldName =
   | "description"
   | "severity"
   | "systemArea"
+  | "site"
   | "tags";
 
 export interface IncidentActionState {
@@ -141,6 +144,9 @@ export const incidentInputSchema = z.object({
     .trim()
     .max(80, "Keep the system area under 80 characters.")
     .transform((value) => value || undefined),
+  site: z.enum(siteValues, {
+    error: "Choose a site.",
+  }),
   tags: z
     .string()
     .max(250, "Keep the tag list under 250 characters.")
@@ -150,6 +156,7 @@ export const incidentInputSchema = z.object({
 export const incidentFilterSchema = z
   .object({
     severity: z.enum(severityValues).optional(),
+    site: z.enum(siteValues).optional(),
     start: z.iso.date().optional(),
     end: z.iso.date().optional(),
     query: z.string().trim().max(100).optional(),
@@ -181,6 +188,7 @@ export interface IncidentView {
   description: string;
   severity: SeverityValue;
   systemArea: string | null;
+  site: (typeof siteValues)[number];
   resolved: boolean;
   rootCause: string | null;
   resolution: string | null;
@@ -215,6 +223,7 @@ export interface IncidentDraft {
   description: string;
   severity: SeverityValue;
   systemArea?: string;
+  site?: (typeof siteValues)[number];
   tags: string[];
 }
 

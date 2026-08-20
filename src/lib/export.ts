@@ -4,6 +4,7 @@ export interface ExportIncident {
   description: string;
   severity: string;
   systemArea: string | null;
+  site?: string;
   resolved: boolean;
   rootCause: string | null;
   resolution: string | null;
@@ -46,6 +47,7 @@ export function createIncidentCsv(incidents: ExportIncident[]): string {
     "description",
     "severity",
     "systemArea",
+    "site",
     "resolved",
     "rootCause",
     "resolution",
@@ -60,6 +62,7 @@ export function createIncidentCsv(incidents: ExportIncident[]): string {
       incident.description,
       incident.severity,
       incident.systemArea,
+      incident.site ?? "",
       incident.resolved,
       incident.rootCause,
       incident.resolution,

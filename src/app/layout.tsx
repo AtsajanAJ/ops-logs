@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { AppShell } from "@/components/app-shell";
 import { QueryProvider } from "@/components/query-provider";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 
@@ -60,9 +59,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
-        <QueryProvider>
-          <AppShell>{children}</AppShell>
-        </QueryProvider>
+        <QueryProvider>{children}</QueryProvider>
         <ServiceWorkerRegister />
       </body>
     </html>

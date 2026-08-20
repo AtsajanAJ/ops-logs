@@ -26,6 +26,7 @@ describe("incident validation", () => {
       description: "Requests returned a timeout.",
       severity: "HIGH",
       systemArea: " ",
+      site: "BANGKOK",
       tags: "network, timeout",
     });
 
@@ -34,6 +35,7 @@ describe("incident validation", () => {
       description: "Requests returned a timeout.",
       severity: "HIGH",
       systemArea: undefined,
+      site: "BANGKOK",
       tags: ["network", "timeout"],
     });
   });

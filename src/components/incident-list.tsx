@@ -35,13 +35,18 @@ import {
   type IncidentView,
   type SeverityValue,
 } from "@/lib/incidents";
+import { canWriteIncident } from "@/lib/permissions";
+import { siteLabels, siteValues, type SiteValue } from "@/lib/sites";
+import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 import { cn } from "@/lib/utils";
 
 type SeverityFilter = SeverityValue | "ALL";
+type SiteFilter = SiteValue | "ALL";
 type FacetFilter = string | "ALL";
 
 interface IncidentFilters {
   severity: SeverityFilter;
+  site: SiteFilter;
   tag: FacetFilter;
   systemArea: FacetFilter;
   query: string;
@@ -66,6 +71,9 @@ async function fetchIncidents(
   const params = new URLSearchParams({ limit: "10" });
   if (filters.severity !== "ALL") {
     params.set("severity", filters.severity);
+  }
+  if (filters.site !== "ALL") {
+    params.set("site", filters.site);
   }
   if (filters.tag !== "ALL") params.set("tag", filters.tag);
   if (filters.systemArea !== "ALL") {
@@ -130,9 +138,13 @@ function IncidentSkeleton(): React.JSX.Element {
 
 interface IncidentCardProps {
   incident: IncidentView;
+  canWrite: boolean;
 }
 
-function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
+function IncidentCard({
+  incident,
+  canWrite,
+}: IncidentCardProps): React.JSX.Element {
   return (
     <article
       className={cn(
@@ -168,6 +180,9 @@ function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
               {incident.title}
             </h3>
             <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-slate-500">
+                {siteLabels[incident.site]}
+              </span>
               {incident.systemArea && (
                 <span className="text-xs font-medium text-slate-500">
                   {incident.systemArea}
@@ -178,8 +193,12 @@ function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
                   Resolved
                 </Badge>
               )}
-              <IncidentLifecycleDialog incident={incident} />
-              <IncidentDeleteDialog incident={incident} />
+              {canWrite && (
+                <>
+                  <IncidentLifecycleDialog incident={incident} />
+                  <IncidentDeleteDialog incident={incident} />
+                </>
+              )}
             </div>
           </div>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
@@ -202,13 +221,16 @@ function IncidentCard({ incident }: IncidentCardProps): React.JSX.Element {
 
 export function IncidentList(): React.JSX.Element {
   const [severity, setSeverity] = useState<SeverityFilter>("ALL");
+  const [site, setSite] = useState<SiteFilter>("ALL");
   const [tag, setTag] = useState<FacetFilter>("ALL");
   const [systemArea, setSystemArea] = useState<FacetFilter>("ALL");
   const [query, setQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const deferredQuery = useDeferredValue(query.trim());
+  const { user } = useCurrentAuthUser();
   const filters: IncidentFilters = {
     severity,
+    site,
     tag,
     systemArea,
     query: deferredQuery,
@@ -225,6 +247,7 @@ export function IncidentList(): React.JSX.Element {
   });
   const activeFilterCount = [
     severity !== "ALL",
+    site !== "ALL",
     tag !== "ALL",
     systemArea !== "ALL",
     Boolean(query.trim()),
@@ -234,6 +257,7 @@ export function IncidentList(): React.JSX.Element {
 
   function clearFilters(): void {
     setSeverity("ALL");
+    setSite("ALL");
     setTag("ALL");
     setSystemArea("ALL");
     setQuery("");
@@ -294,7 +318,7 @@ export function IncidentList(): React.JSX.Element {
         <div
           id="incident-filters"
           className={cn(
-            "mt-3 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid md:grid-cols-2 xl:grid-cols-[repeat(3,minmax(8rem,1fr))_auto]",
+            "mt-3 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid md:grid-cols-2 xl:grid-cols-[repeat(4,minmax(8rem,1fr))_auto]",
             showFilters ? "grid" : "hidden",
           )}
         >
@@ -321,6 +345,32 @@ export function IncidentList(): React.JSX.Element {
               {severityValues.map((value) => (
                 <SelectItem key={value} value={value}>
                   {severityLabels[value]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={site}
+            onValueChange={(value) => setSite((value ?? "ALL") as SiteFilter)}
+          >
+            <SelectTrigger
+              aria-label="Filter by site"
+              className="h-9! w-full bg-white"
+            >
+              <SelectValue>
+                {(value) =>
+                  value === "ALL"
+                    ? "All sites"
+                    : siteLabels[value as SiteValue]
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All sites</SelectItem>
+              {siteValues.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {siteLabels[value]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -386,7 +436,7 @@ export function IncidentList(): React.JSX.Element {
           <SlidersHorizontal aria-hidden="true" className="size-3.5" />
           {activeFilterCount > 0
             ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
-            : "Search is instant. Use filters to narrow by severity, system area, or tag."}
+            : "Search is instant. Use filters to narrow by site, severity, system area, or tag."}
           {facetsQuery.isError && (
             <span className="font-medium text-red-700">
               · {facetsQuery.error.message}
@@ -435,7 +485,11 @@ export function IncidentList(): React.JSX.Element {
         <div>
           <div className="grid gap-3">
             {incidents.map((incident) => (
-              <IncidentCard key={incident.id} incident={incident} />
+              <IncidentCard
+                key={incident.id}
+                incident={incident}
+                canWrite={canWriteIncident(user, incident.site)}
+              />
             ))}
           </div>
           {incidentsQuery.hasNextPage && (

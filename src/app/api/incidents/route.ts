@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { requireApiUser } from "@/lib/api-auth";
 import { getDb } from "@/lib/db";
 import {
   incidentFilterSchema,
@@ -10,8 +11,14 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const authResult = await requireApiUser();
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+
   const parsedFilters = incidentFilterSchema.safeParse({
     severity: request.nextUrl.searchParams.get("severity") || undefined,
+    site: request.nextUrl.searchParams.get("site") || undefined,
     start: request.nextUrl.searchParams.get("start") || undefined,
     end: request.nextUrl.searchParams.get("end") || undefined,
     query: request.nextUrl.searchParams.get("query") || undefined,
@@ -29,11 +36,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const { severity, start, end, query, tag, systemArea, cursor, limit } =
-      parsedFilters.data;
+    const {
+      severity,
+      site,
+      start,
+      end,
+      query,
+      tag,
+      systemArea,
+      cursor,
+      limit,
+    } = parsedFilters.data;
     const incidents = await getDb().incidentLog.findMany({
       where: {
         severity,
+        site,
         tags: tag ? { has: tag } : undefined,
         systemArea: systemArea
           ? { equals: systemArea, mode: "insensitive" }
@@ -68,6 +85,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       description: incident.description,
       severity: incident.severity,
       systemArea: incident.systemArea,
+      site: incident.site,
       resolved: incident.resolved,
       rootCause: incident.rootCause,
       resolution: incident.resolution,

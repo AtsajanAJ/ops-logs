@@ -6,6 +6,7 @@ import { Activity, PanelLeft, PanelLeftClose } from "lucide-react";
 
 import { AppNavigation } from "@/components/app-navigation";
 import { MobileNavigation } from "@/components/mobile-navigation";
+import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -105,6 +106,9 @@ export function AppShell({ children }: AppShellProps): React.JSX.Element {
             collapsed ? "px-2" : "px-3",
           )}
         >
+          <div className="mb-2">
+            <UserMenu collapsed={collapsed} />
+          </div>
           <Button
             type="button"
             variant="ghost"

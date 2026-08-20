@@ -7,21 +7,112 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum UserRole {
+  VISITOR
+  MEMBER
+  ADMIN
+}
+
+enum Site {
+  BANGKOK
+  PHUKET
+}
+
+model User {
+  id            String        @id
+  name          String
+  email         String
+  emailVerified Boolean       @default(false)
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  role          UserRole      @default(VISITOR)
+  homeSite      Site?
+  sessions      Session[]
+  accounts      Account[]
+  incidents     IncidentLog[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  issuer                String
+
+  @@unique([issuer, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
 model IncidentLog {
   id          String    @id @default(cuid())
   title       String
   description String
   severity    Severity  @default(LOW)
   systemArea  String?
+  site        Site      @default(BANGKOK)
   resolved    Boolean   @default(false)
   rootCause   String?
   resolution  String?
   tags        String[]
   createdAt   DateTime  @default(now())
   resolvedAt  DateTime?
+  createdById String?
+  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@index([severity, createdAt])
+  @@index([site, createdAt])
+  @@index([createdById])
 }
 
 model WeeklySummary {
@@ -32,11 +123,4 @@ model WeeklySummary {
   incidentIds String[]
   reviewed    Boolean  @default(false)
   createdAt   DateTime @default(now())
-}
-
-enum Severity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
 }

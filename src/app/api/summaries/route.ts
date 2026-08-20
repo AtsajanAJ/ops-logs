@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { requireApiUser } from "@/lib/api-auth";
 import { getDb } from "@/lib/db";
 import {
   summaryDateRangeSchema,
@@ -10,6 +11,11 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const authResult = await requireApiUser();
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+
   const weekStart = request.nextUrl.searchParams.get("start");
   const weekEnd = request.nextUrl.searchParams.get("end");
   const hasRange = Boolean(weekStart || weekEnd);

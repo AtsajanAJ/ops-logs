@@ -10,6 +10,8 @@ import {
   generateWeeklySummary,
 } from "@/lib/gemini";
 import { getDb } from "@/lib/db";
+import { canMutateSummaries } from "@/lib/permissions";
+import { getCurrentUser } from "@/lib/session";
 import {
   generateSummarySchema,
   toDateBounds,
@@ -32,10 +34,31 @@ function formString(formData: FormData, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
+async function requireSummaryWriter(): Promise<
+  { ok: true } | { ok: false; message: string }
+> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, message: "Sign in to continue." };
+  }
+  if (!canMutateSummaries(user)) {
+    return {
+      ok: false,
+      message: "Visitors are read-only. Ask an admin to grant Member access.",
+    };
+  }
+  return { ok: true };
+}
+
 export async function generateSummaryDraft(
   _previousState: SummaryActionState,
   formData: FormData,
 ): Promise<SummaryActionState> {
+  const access = await requireSummaryWriter();
+  if (!access.ok) {
+    return { status: "error", message: access.message };
+  }
+
   let incidents: unknown;
 
   try {
@@ -85,7 +108,8 @@ export async function generateSummaryDraft(
     if (existingIncidents.length !== incidentIds.length) {
       return {
         status: "error",
-        message: "One or more incidents no longer exist. Prepare the report again.",
+        message:
+          "One or more incidents no longer exist. Prepare the report again.",
       };
     }
 
@@ -148,6 +172,11 @@ export async function updateSummaryDraft(
   _previousState: SummaryActionState,
   formData: FormData,
 ): Promise<SummaryActionState> {
+  const access = await requireSummaryWriter();
+  if (!access.ok) {
+    return { status: "error", message: access.message };
+  }
+
   const parsed = updateSummarySchema.safeParse({
     id: formString(formData, "id"),
     summaryText: formString(formData, "summaryText"),
@@ -188,6 +217,11 @@ export async function markSummaryReviewed(
   _previousState: SummaryActionState,
   formData: FormData,
 ): Promise<SummaryActionState> {
+  const access = await requireSummaryWriter();
+  if (!access.ok) {
+    return { status: "error", message: access.message };
+  }
+
   const parsedId = summaryIdSchema.safeParse(formString(formData, "id"));
   if (!parsedId.success) {
     return { status: "error", message: "The report ID is invalid." };
@@ -224,6 +258,11 @@ export async function deleteSummaryDraft(
   _previousState: SummaryActionState,
   formData: FormData,
 ): Promise<SummaryActionState> {
+  const access = await requireSummaryWriter();
+  if (!access.ok) {
+    return { status: "error", message: access.message };
+  }
+
   const parsedId = summaryIdSchema.safeParse(formString(formData, "id"));
   if (!parsedId.success) {
     return { status: "error", message: "The report ID is invalid." };
@@ -237,7 +276,8 @@ export async function deleteSummaryDraft(
     if (result.count === 0) {
       return {
         status: "error",
-        message: "Only draft reports can be deleted, or the report no longer exists.",
+        message:
+          "Only draft reports can be deleted, or the report no longer exists.",
       };
     }
 

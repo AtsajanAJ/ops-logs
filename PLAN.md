@@ -82,7 +82,7 @@ field that gets sent to the summarization prompt.
 
 ## Phase 4 — Production Hardening (Week 4, before relying on it daily)
 
-- [ ] Add basic auth (deferred while the app remains local-only)
+- [x] Add team auth (Better Auth email/password; Visitor/Member/Admin + Bangkok/Phuket sites)
 - [x] Add incident resolution workflow (root cause, resolution, resolve/reopen)
 - [x] Add data export (CSV/JSON) — don't lock your own data in
 - [x] Add error handling + loading states everywhere (no silent failures)

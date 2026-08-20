@@ -49,7 +49,8 @@ Not a customer-facing product — optimize for "works reliably for one person", 
    AI output as final without a human looking at it first.
 
 ## What NOT to do
-- Don't add authentication complexity beyond a single-user gate (this isn't multi-tenant).
+- Don't turn auth into multi-tenant SaaS. Keep one shared ops workspace with
+  Visitor / Member / Admin roles and Bangkok / Phuket site scoping for writes.
 - Don't over-engineer the search — Postgres `ILIKE`/basic full-text is enough at this scale.
 - Don't call Gemini API directly from client components — always through a server
   action or route handler, so the API key never reaches the browser.
@@ -57,6 +58,8 @@ Not a customer-facing product — optimize for "works reliably for one person", 
 
 ## File/folder conventions
 - `src/app/` — routes (App Router)
+- `src/lib/auth.ts` — Better Auth server config
+- `src/lib/permissions.ts` — role/site authorization helpers
 - `src/lib/gemini.ts` — Gemini API wrapper, single place all AI calls go through
 - `src/lib/db.ts` — Prisma client singleton
 - `src/components/` — shared UI (shadcn/ui based)

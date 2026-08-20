@@ -8,8 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { writableSitesFor } from "@/lib/permissions";
+import { getCurrentUser } from "@/lib/session";
 
-export default function Home(): React.JSX.Element {
+export default async function Home(): Promise<React.JSX.Element> {
+  const user = await getCurrentUser();
+  const canWrite = user ? writableSitesFor(user).length > 0 : false;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <PageHeading
@@ -25,7 +30,9 @@ export default function Home(): React.JSX.Element {
               Quick log entry
             </CardTitle>
             <CardDescription>
-              Required fields are marked. Optional context can be added now or later.
+              {canWrite
+                ? "Required fields are marked. Optional context can be added now or later."
+                : "You can browse all sites. Ask an admin for Member access to log incidents."}
             </CardDescription>
           </CardHeader>
           <CardContent className="px-5 py-6 sm:px-6">

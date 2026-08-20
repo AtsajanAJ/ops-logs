@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireApiUser } from "@/lib/api-auth";
 import {
   buildDashboardData,
   getDashboardStart,
@@ -9,6 +10,11 @@ import { getDb } from "@/lib/db";
 export const runtime = "nodejs";
 
 export async function GET(): Promise<NextResponse> {
+  const authResult = await requireApiUser();
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+
   try {
     const reference = new Date();
     const incidents = await getDb().incidentLog.findMany({

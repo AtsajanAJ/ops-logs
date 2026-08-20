@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 
+import { requireApiUser } from "@/lib/api-auth";
 import { getDb } from "@/lib/db";
 import { createJsonArchive } from "@/lib/export";
 
 export const runtime = "nodejs";
 
 export async function GET(): Promise<NextResponse> {
+  const authResult = await requireApiUser();
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+
   try {
     const [incidents, summaries] = await Promise.all([
       getDb().incidentLog.findMany({ orderBy: { createdAt: "desc" } }),

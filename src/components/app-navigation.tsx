@@ -2,11 +2,10 @@
 
 import {
   BarChart3,
-  BookOpenText,
   Settings,
-  WandSparkles,
   CalendarDays,
   NotebookPen,
+  Astroid,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,13 +18,13 @@ const NAV_ITEMS = [
     href: "/",
     label: "Incidents",
     desktopLabel: "Incident log",
-    icon: BookOpenText,
+    icon: NotebookPen,
   },
   {
     href: "/summaries",
     label: "Prepare",
     desktopLabel: "Prepare",
-    icon: NotebookPen,
+    icon: Astroid,
   },
   {
     href: "/reports",
@@ -39,12 +38,12 @@ const NAV_ITEMS = [
     desktopLabel: "Dashboard",
     icon: BarChart3,
   },
-  // {
-  //   href: "/settings",
-  //   label: "Settings",
-  //   desktopLabel: "Settings",
-  //   icon: Settings,
-  // },
+  {
+    href: "/settings",
+    label: "Settings",
+    desktopLabel: "Settings",
+    icon: Settings,
+  },
 ] as const;
 
 interface AppNavigationProps {

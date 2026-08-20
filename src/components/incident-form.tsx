@@ -24,6 +24,9 @@ import {
   severityValues,
   SYSTEM_AREAS,
 } from "@/lib/incidents";
+import { writableSitesFor } from "@/lib/permissions";
+import { siteLabels } from "@/lib/sites";
+import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 import { cn } from "@/lib/utils";
 
 function SubmitButton(): React.JSX.Element {
@@ -67,9 +70,14 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   );
   const formRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
+  const { user } = useCurrentAuthUser();
+  const writableSites = user ? writableSitesFor(user) : [];
+  const defaultSite = writableSites[0] ?? "BANGKOK";
+  const siteLocked = writableSites.length === 1;
   const titleId = `${idPrefix}title`;
   const titleErrorId = `${idPrefix}title-error`;
   const severityId = `${idPrefix}severity`;
+  const siteId = `${idPrefix}site`;
   const systemAreaId = `${idPrefix}system-area`;
   const descriptionId = `${idPrefix}description`;
   const tagsId = `${idPrefix}tags`;
@@ -80,6 +88,15 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
     formRef.current?.reset();
     void queryClient.invalidateQueries({ queryKey: ["incidents"] });
   }, [queryClient, state]);
+
+  if (writableSites.length === 0) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        You have read-only access. Ask an admin to promote you to Member and
+        assign a home site before logging incidents.
+      </div>
+    );
+  }
 
   return (
     <form
@@ -148,29 +165,69 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor={systemAreaId}>
-            System area <span className="font-normal text-slate-500">(optional)</span>
+          <Label htmlFor={siteId}>
+            Site <span className="text-red-600" aria-hidden="true">*</span>
           </Label>
-          <Select name="systemArea">
-            <SelectTrigger
-              id={systemAreaId}
-              className="h-11! w-full bg-white"
-              aria-invalid={Boolean(state.fieldErrors.systemArea)}
-            >
-              <SelectValue placeholder="Select system area">
-                {(value) => (value ? String(value) : "Select system area")}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {SYSTEM_AREAS.map((area) => (
-                <SelectItem key={area} value={area}>
-                  {area}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FieldError message={state.fieldErrors.systemArea} />
+          {siteLocked ? (
+            <>
+              <input type="hidden" name="site" value={defaultSite} />
+              <Input
+                id={siteId}
+                value={siteLabels[defaultSite]}
+                readOnly
+                className="h-11 bg-slate-50"
+              />
+            </>
+          ) : (
+            <Select name="site" defaultValue={defaultSite}>
+              <SelectTrigger
+                id={siteId}
+                className="h-11! w-full bg-white"
+                aria-invalid={Boolean(state.fieldErrors.site)}
+              >
+                <SelectValue>
+                  {(value) =>
+                    siteLabels[value as keyof typeof siteLabels] ??
+                    siteLabels.BANGKOK
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {writableSites.map((site) => (
+                  <SelectItem key={site} value={site}>
+                    {siteLabels[site]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <FieldError message={state.fieldErrors.site} />
         </div>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor={systemAreaId}>
+          System area <span className="font-normal text-slate-500">(optional)</span>
+        </Label>
+        <Select name="systemArea">
+          <SelectTrigger
+            id={systemAreaId}
+            className="h-11! w-full bg-white"
+            aria-invalid={Boolean(state.fieldErrors.systemArea)}
+          >
+            <SelectValue placeholder="Select system area">
+              {(value) => (value ? String(value) : "Select system area")}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {SYSTEM_AREAS.map((area) => (
+              <SelectItem key={area} value={area}>
+                {area}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <FieldError message={state.fieldErrors.systemArea} />
       </div>
 
       <div className="grid gap-2">

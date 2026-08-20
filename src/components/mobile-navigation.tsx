@@ -24,6 +24,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { writableSitesFor } from "@/lib/permissions";
+import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 import { cn } from "@/lib/utils";
 
 const MOBILE_ITEMS = [
@@ -71,6 +73,9 @@ function MobileLink({
 }
 
 export function MobileNavigation(): React.JSX.Element {
+  const { user } = useCurrentAuthUser();
+  const canWrite = user ? writableSitesFor(user).length > 0 : false;
+
   return (
     <nav
       aria-label="Mobile primary navigation"
@@ -84,50 +89,57 @@ export function MobileNavigation(): React.JSX.Element {
           <MobileLink item={MOBILE_ITEMS[1]} />
         </li>
         <li className="relative">
-          <Dialog>
-            <DialogTrigger
-              render={
-                <button
-                  type="button"
-                  className="absolute inset-x-0 -top-3 mx-auto flex w-full flex-col items-center gap-1 rounded-lg text-[0.65rem] font-semibold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
-                />
-              }
-            >
-              <span className="ui-transition flex size-12 items-center justify-center rounded-full border-4 border-white bg-slate-950 text-white shadow-lg transition-transform active:scale-95">
-                <Plus aria-hidden="true" className="size-5" />
-              </span>
-              <span>Add</span>
-            </DialogTrigger>
-            <DialogContent
-              showCloseButton={false}
-              className="top-auto! right-0 bottom-0 left-0! max-h-[92dvh] w-full! max-w-none! translate-x-0! translate-y-0! gap-0 overflow-y-auto rounded-b-none p-0"
-            >
-              <DialogHeader className="sticky top-0 z-10 border-b border-slate-200 bg-white px-5 py-4 pr-16 text-left">
-                <DialogTitle className="text-lg font-semibold">
-                  Log an incident
-                </DialogTitle>
-                <DialogDescription>
-                  Capture the essentials now. You can resolve it later.
-                </DialogDescription>
-                <DialogClose
-                  render={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2.5 right-3 size-11"
-                    />
-                  }
-                >
-                  <X aria-hidden="true" />
-                  <span className="sr-only">Close incident form</span>
-                </DialogClose>
-              </DialogHeader>
-              <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
-                <IncidentForm idPrefix="mobile-" />
-              </div>
-            </DialogContent>
-          </Dialog>
+          {canWrite ? (
+            <Dialog>
+              <DialogTrigger
+                render={
+                  <button
+                    type="button"
+                    className="absolute inset-x-0 -top-3 mx-auto flex w-full flex-col items-center gap-1 rounded-lg text-[0.65rem] font-semibold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+                  />
+                }
+              >
+                <span className="ui-transition flex size-12 items-center justify-center rounded-full border-4 border-white bg-slate-950 text-white shadow-lg transition-transform active:scale-95">
+                  <Plus aria-hidden="true" className="size-5" />
+                </span>
+                <span>Add</span>
+              </DialogTrigger>
+              <DialogContent
+                showCloseButton={false}
+                className="top-auto! right-0 bottom-0 left-0! max-h-[92dvh] w-full! max-w-none! translate-x-0! translate-y-0! gap-0 overflow-y-auto rounded-b-none p-0"
+              >
+                <DialogHeader className="sticky top-0 z-10 border-b border-slate-200 bg-white px-5 py-4 pr-16 text-left">
+                  <DialogTitle className="text-lg font-semibold">
+                    Log an incident
+                  </DialogTitle>
+                  <DialogDescription>
+                    Capture the essentials now. You can resolve it later.
+                  </DialogDescription>
+                  <DialogClose
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2.5 right-3 size-11"
+                      />
+                    }
+                  >
+                    <X aria-hidden="true" />
+                    <span className="sr-only">Close incident form</span>
+                  </DialogClose>
+                </DialogHeader>
+                <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
+                  <IncidentForm idPrefix="mobile-" />
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <div className="flex h-16 flex-col items-center justify-center gap-0.5 text-[0.65rem] font-medium text-slate-400">
+              <Plus aria-hidden="true" className="size-5 opacity-40" />
+              <span>Read-only</span>
+            </div>
+          )}
         </li>
         <li>
           <MobileLink item={MOBILE_ITEMS[2]} />

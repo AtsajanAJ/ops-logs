@@ -1,6 +1,6 @@
 # Ops Logs
 
-A single-user operations ledger for capturing incidents quickly and turning them into
+A team operations ledger for capturing incidents quickly and turning them into
 reviewable weekly reports. It includes knowledge-base search, AI-assisted report drafts,
 and an eight-week operational dashboard.
 
@@ -14,6 +14,8 @@ bun install
 ```
 
 Replace `DATABASE_URL` in `.env` with the pooled connection string from Neon.
+Set `BETTER_AUTH_SECRET` (e.g. `openssl rand -base64 32`), `BETTER_AUTH_URL=http://localhost:3000`,
+and `ADMIN_EMAIL` to the email that should become Admin on first register.
 To generate weekly drafts, also add a `GEMINI_API_KEY` from Google AI Studio.
 Then run:
 
@@ -22,13 +24,14 @@ bunx prisma migrate deploy
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) — you will be redirected to `/login`.
+Register with `ADMIN_EMAIL` first, then promote teammates under Settings → User access.
 
 - `/` — quick incident entry, search, and filters
 - `/summaries` — anonymization review and weekly report drafts
 - `/dashboard` — eight-week volume and severity trends
-- `/settings` — sensitive data exports and recovery guidance
-
+- `/settings` — exports, recovery guidance, and (admins) user access
+- `/login`, `/register` — email/password auth (new users start as Visitor)
 ## Commands
 
 ```bash
@@ -100,7 +103,7 @@ using the app.
 
 ## Deploying
 
-Deployment, authentication, and Cron automation are currently deferred. Before exposing
-the app publicly, add a single-user access gate, configure `DATABASE_URL` and
-`GEMINI_API_KEY` in Vercel, and run production migrations. Cron must never bypass the
-human anonymization review.
+Before exposing the app publicly, configure `DATABASE_URL`, `BETTER_AUTH_SECRET`,
+`BETTER_AUTH_URL`, `ADMIN_EMAIL`, and `GEMINI_API_KEY` in Vercel, then run production
+migrations. Cron automation is still deferred and must never bypass the human
+anonymization review.

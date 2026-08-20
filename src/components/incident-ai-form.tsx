@@ -35,6 +35,9 @@ import {
   SYSTEM_AREAS,
   type IncidentDraft,
 } from "@/lib/incidents";
+import { writableSitesFor } from "@/lib/permissions";
+import { siteLabels, siteValues } from "@/lib/sites";
+import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 
 const severityFallback = severityLabels.MEDIUM;
 
@@ -105,6 +108,10 @@ export function IncidentAiForm({
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const saveFormRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
+  const { user } = useCurrentAuthUser();
+  const writableSites = user ? writableSitesFor(user) : [];
+  const defaultSite = writableSites[0] ?? "BANGKOK";
+  const siteLocked = writableSites.length === 1;
 
   useEffect(() => {
     if (draftState.status === "success" && draftState.draft) {
@@ -125,7 +132,21 @@ export function IncidentAiForm({
     setDraft(null);
   }
 
+  if (writableSites.length === 0) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        You have read-only access. Ask an admin to promote you to Member and
+        assign a home site before using AI assist.
+      </div>
+    );
+  }
+
   if (draft) {
+    const draftSite =
+      draft.site && siteValues.includes(draft.site) && writableSites.includes(draft.site)
+        ? draft.site
+        : defaultSite;
+
     return (
       <div className="grid gap-4">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
@@ -173,6 +194,43 @@ export function IncidentAiForm({
             </div>
 
             <div className="grid gap-2">
+              <Label htmlFor={`${idPrefix}draft-site`}>Site</Label>
+              {siteLocked ? (
+                <>
+                  <input type="hidden" name="site" value={draftSite} />
+                  <Input
+                    id={`${idPrefix}draft-site`}
+                    value={siteLabels[draftSite]}
+                    readOnly
+                    className="h-11 bg-slate-50"
+                  />
+                </>
+              ) : (
+                <Select name="site" defaultValue={draftSite}>
+                  <SelectTrigger
+                    id={`${idPrefix}draft-site`}
+                    className="h-11! w-full bg-white"
+                  >
+                    <SelectValue>
+                      {(value) =>
+                        siteLabels[value as keyof typeof siteLabels] ??
+                        siteLabels.BANGKOK
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {writableSites.map((site) => (
+                      <SelectItem key={site} value={site}>
+                        {siteLabels[site]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-2">
               <Label htmlFor={`${idPrefix}draft-area`}>System area</Label>
               <Select
                 name="systemArea"
@@ -204,7 +262,6 @@ export function IncidentAiForm({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
           <div className="grid gap-2">
             <Label htmlFor={`${idPrefix}draft-desc`}>Description</Label>
