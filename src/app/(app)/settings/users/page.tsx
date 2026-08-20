@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { UserAccessManager } from "@/components/user-access-manager";
 import { PageHeading } from "@/components/page-heading";
+import { T } from "@/components/t";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 
@@ -28,8 +29,8 @@ export default async function UsersSettingsPage(): Promise<React.JSX.Element> {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <PageHeading
-        title="User access"
-        description="Promote visitors to Member with a home site, or grant Admin. Visitors remain read-only."
+        title={<T k="pages.usersTitle" />}
+        description={<T k="pages.usersDescription" />}
         className="mb-6"
       />
 

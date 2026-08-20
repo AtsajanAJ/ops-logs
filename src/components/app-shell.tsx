@@ -6,6 +6,7 @@ import { Activity, PanelLeft, PanelLeftClose } from "lucide-react";
 
 import { AppNavigation } from "@/components/app-navigation";
 import { AppTopBar } from "@/components/app-topbar";
+import { useLocale } from "@/components/locale-provider";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps): React.JSX.Element {
   const [collapsed, setCollapsed] = useState(false);
+  const { t } = useLocale();
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +70,7 @@ export function AppShell({ children }: AppShellProps): React.JSX.Element {
         >
           <Link
             href="/"
-            title="Ops Logs"
+            title={t("brand.name")}
             className={cn(
               "ui-transition flex items-center rounded-lg outline-none transition-opacity hover:opacity-75 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2",
               collapsed ? "justify-center" : "gap-3",
@@ -80,14 +82,14 @@ export function AppShell({ children }: AppShellProps): React.JSX.Element {
             {!collapsed && (
               <span>
                 <span className="block text-sm font-semibold tracking-tight text-slate-950">
-                  Ops Logs
+                  {t("brand.name")}
                 </span>
                 <span className="block text-xs text-slate-500">
-                  Operations workspace
+                  {t("brand.tagline")}
                 </span>
               </span>
             )}
-            {collapsed && <span className="sr-only">Ops Logs</span>}
+            {collapsed && <span className="sr-only">{t("brand.name")}</span>}
           </Link>
         </div>
 
@@ -113,8 +115,12 @@ export function AppShell({ children }: AppShellProps): React.JSX.Element {
             onClick={toggleCollapsed}
             aria-expanded={!collapsed}
             aria-controls="primary-sidebar-nav"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={
+              collapsed ? t("shell.expandSidebar") : t("shell.collapseSidebar")
+            }
+            title={
+              collapsed ? t("shell.expandSidebar") : t("shell.collapseSidebar")
+            }
             className={cn(
               "h-10 w-full text-slate-600 hover:text-slate-950",
               collapsed ? "justify-center px-0" : "justify-start gap-2.5 px-3",
@@ -125,7 +131,7 @@ export function AppShell({ children }: AppShellProps): React.JSX.Element {
             ) : (
               <PanelLeftClose aria-hidden="true" className="size-4" />
             )}
-            {!collapsed && <span>Collapse</span>}
+            {!collapsed && <span>{t("shell.collapse")}</span>}
           </Button>
         </div>
       </aside>

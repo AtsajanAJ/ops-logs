@@ -1,6 +1,7 @@
 import { Database, Download, KeyRound, ShieldAlert, Users } from "lucide-react";
 
 import { PageHeading } from "@/components/page-heading";
+import { T } from "@/components/t";
 import { buttonVariants } from "@/components/ui/button";
 import { canManageUsers } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
@@ -13,8 +14,8 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <PageHeading
-        title="Settings"
-        description="Export your records, check recovery coverage, and keep local credentials secure."
+        title={<T k="pages.settingsTitle" />}
+        description={<T k="pages.settingsDescription" />}
         className="mb-6"
       />
 

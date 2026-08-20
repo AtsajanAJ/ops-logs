@@ -20,20 +20,19 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   initialIncidentActionState,
-  entryTypeLabels,
   entryTypeValues,
-  severityLabels,
   severityValues,
   SYSTEM_AREAS,
   type EntryTypeValue,
 } from "@/lib/incidents";
 import { writableSitesFor } from "@/lib/permissions";
-import { siteLabels } from "@/lib/sites";
 import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
+import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/utils";
 
 function SubmitButton(): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
 
   return (
     <Button
@@ -47,7 +46,7 @@ function SubmitButton(): React.JSX.Element {
       ) : (
         <Plus aria-hidden="true" />
       )}
-      {pending ? "Saving incident…" : "Log incident"}
+      {pending ? t("form.savingIncident") : t("form.logIncident")}
     </Button>
   );
 }
@@ -78,6 +77,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   const defaultSite = writableSites[0] ?? "BANGKOK";
   const siteLocked = writableSites.length === 1;
   const [entryType, setEntryType] = useState<EntryTypeValue>("INCIDENT");
+  const { t } = useLocale();
   const titleId = `${idPrefix}title`;
   const titleErrorId = `${idPrefix}title-error`;
   const entryTypeId = `${idPrefix}entry-type`;
@@ -98,8 +98,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   if (writableSites.length === 0) {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-        You have read-only access. Ask an admin to promote you to Member and
-        assign a home site before logging incidents.
+        {t("form.readOnlyNotice")}
       </div>
     );
   }
@@ -123,7 +122,10 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
     >
       <div className="grid gap-2">
         <Label htmlFor={titleId}>
-          Title <span className="text-red-600" aria-hidden="true">*</span>
+          {t("form.title")}{" "}
+          <span className="text-red-600" aria-hidden="true">
+            *
+          </span>
         </Label>
         <Input
           id={titleId}
@@ -149,7 +151,10 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
       >
         <div className="grid gap-2">
           <Label htmlFor={entryTypeId}>
-            Type <span className="text-red-600" aria-hidden="true">*</span>
+            {t("form.type")}{" "}
+            <span className="text-red-600" aria-hidden="true">
+              *
+            </span>
           </Label>
           <Select
             name="entryType"
@@ -164,16 +169,13 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
               aria-invalid={Boolean(state.fieldErrors.entryType)}
             >
               <SelectValue>
-                {(value) =>
-                  entryTypeLabels[value as keyof typeof entryTypeLabels] ??
-                  entryTypeLabels.INCIDENT
-                }
+                {(value) => t(`entryType.${value as EntryTypeValue}`)}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {entryTypeValues.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {entryTypeLabels[value]}
+                  {t(`entryType.${value}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -184,7 +186,10 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         {entryType === "INCIDENT" && (
           <div className="grid gap-2">
             <Label htmlFor={severityId}>
-              Severity <span className="text-red-600" aria-hidden="true">*</span>
+              {t("form.severity")}{" "}
+              <span className="text-red-600" aria-hidden="true">
+                *
+              </span>
             </Label>
             <Select name="severity" defaultValue="LOW">
               <SelectTrigger
@@ -193,16 +198,13 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
                 aria-invalid={Boolean(state.fieldErrors.severity)}
               >
                 <SelectValue>
-                  {(value) =>
-                    severityLabels[value as keyof typeof severityLabels] ??
-                    severityLabels.LOW
-                  }
+                  {(value) => t(`severity.${value as string}`)}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {severityValues.map((severity) => (
                   <SelectItem key={severity} value={severity}>
-                    {severityLabels[severity]}
+                    {t(`severity.${severity}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -213,14 +215,17 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
 
         <div className="grid gap-2">
           <Label htmlFor={siteId}>
-            Site <span className="text-red-600" aria-hidden="true">*</span>
+            {t("form.site")}{" "}
+            <span className="text-red-600" aria-hidden="true">
+              *
+            </span>
           </Label>
           {siteLocked ? (
             <>
               <input type="hidden" name="site" value={defaultSite} />
               <Input
                 id={siteId}
-                value={siteLabels[defaultSite]}
+                value={t(`sites.${defaultSite}`)}
                 readOnly
                 className="h-11 bg-slate-50"
               />
@@ -233,16 +238,13 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
                 aria-invalid={Boolean(state.fieldErrors.site)}
               >
                 <SelectValue>
-                  {(value) =>
-                    siteLabels[value as keyof typeof siteLabels] ??
-                    siteLabels.BANGKOK
-                  }
+                  {(value) => t(`sites.${value as string}`)}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {writableSites.map((site) => (
                   <SelectItem key={site} value={site}>
-                    {siteLabels[site]}
+                    {t(`sites.${site}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -254,7 +256,10 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
 
       <div className="grid gap-2">
         <Label htmlFor={systemAreaId}>
-          System area <span className="font-normal text-slate-500">(optional)</span>
+          {t("form.systemArea")}{" "}
+          <span className="font-normal text-slate-500">
+            {t("form.optional")}
+          </span>
         </Label>
         <Select name="systemArea">
           <SelectTrigger
@@ -262,8 +267,10 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
             className="h-11! w-full bg-white"
             aria-invalid={Boolean(state.fieldErrors.systemArea)}
           >
-            <SelectValue placeholder="Select system area">
-              {(value) => (value ? String(value) : "Select system area")}
+            <SelectValue placeholder={t("form.selectSystemArea")}>
+              {(value) =>
+                value ? String(value) : t("form.selectSystemArea")
+              }
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -279,7 +286,10 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
 
       <div className="grid gap-2">
         <Label htmlFor={descriptionId}>
-          What happened? <span className="text-red-600" aria-hidden="true">*</span>
+          {t("form.whatHappened")}{" "}
+          <span className="text-red-600" aria-hidden="true">
+            *
+          </span>
         </Label>
         <Textarea
           id={descriptionId}
@@ -296,7 +306,10 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
 
       <div className="grid gap-2">
         <Label htmlFor={tagsId}>
-          Tags <span className="font-normal text-slate-500">(optional)</span>
+          {t("form.tags")}{" "}
+          <span className="font-normal text-slate-500">
+            {t("form.optional")}
+          </span>
         </Label>
         <Input
           id={tagsId}
@@ -306,10 +319,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
           aria-invalid={Boolean(state.fieldErrors.tags)}
           className="h-11 bg-white"
         />
-        <p className="text-xs text-slate-500">
-          Prefer: outage, slow, timeout, error, disconnect, login, permission,
-          config, update, hardware, vendor, workaround, intermittent.
-        </p>
+        <p className="text-xs text-slate-500">{t("form.tagsHint")}</p>
         <FieldError message={state.fieldErrors.tags} />
       </div>
 
@@ -326,9 +336,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
             {state.message}
           </div>
           {!state.message && (
-            <p className="text-xs text-slate-500">
-              Press Ctrl or Cmd + Enter to save.
-            </p>
+            <p className="text-xs text-slate-500">{t("form.ctrlEnter")}</p>
           )}
         </div>
         <SubmitButton />
@@ -347,6 +355,7 @@ export function IncidentForm({
   idPrefix = "",
 }: IncidentFormProps): React.JSX.Element {
   const [mode, setMode] = useState<Mode>("manual");
+  const { t } = useLocale();
 
   return (
     <div className="grid gap-5">
@@ -362,7 +371,7 @@ export function IncidentForm({
           )}
         >
           <PenLine aria-hidden="true" className="size-3.5" />
-          Manual
+          {t("form.manual")}
         </button>
         <button
           type="button"
@@ -375,7 +384,7 @@ export function IncidentForm({
           )}
         >
           <WandSparkles aria-hidden="true" className="size-3.5" />
-          AI assist
+          {t("form.aiAssist")}
         </button>
       </div>
 

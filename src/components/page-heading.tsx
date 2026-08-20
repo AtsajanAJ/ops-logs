@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface PageHeadingProps {
-  title: string;
-  description: string;
+  title: ReactNode;
+  description: ReactNode;
   actions?: ReactNode;
   className?: string;
 }
@@ -36,8 +36,8 @@ export function PageHeading({
 }
 
 interface SectionHeadingProps {
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   meta?: ReactNode;
   className?: string;
 }

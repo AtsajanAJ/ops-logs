@@ -27,10 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocale } from "@/components/locale-provider";
 import {
-  entryTypeLabels,
   entryTypeValues,
-  severityLabels,
   severityValues,
   type EntryTypeValue,
   type IncidentFacets,
@@ -39,7 +38,7 @@ import {
   type SeverityValue,
 } from "@/lib/incidents";
 import { canWriteIncident } from "@/lib/permissions";
-import { siteLabels, siteValues, type SiteValue } from "@/lib/sites";
+import { siteValues, type SiteValue } from "@/lib/sites";
 import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 import { cn } from "@/lib/utils";
 
@@ -152,6 +151,8 @@ function IncidentCard({
   incident,
   canWrite,
 }: IncidentCardProps): React.JSX.Element {
+  const { t } = useLocale();
+
   return (
     <article
       className={cn(
@@ -174,7 +175,7 @@ function IncidentCard({
               variant="secondary"
               className="mt-0.5 bg-sky-50 text-sky-800 sm:mt-2"
             >
-              {entryTypeLabels.SERVICE}
+              {t("entryType.SERVICE")}
             </Badge>
           ) : (
             <Badge
@@ -188,7 +189,7 @@ function IncidentCard({
                   severityStyles[incident.severity],
                 )}
               />
-              {severityLabels[incident.severity]}
+              {t(`severity.${incident.severity}`)}
             </Badge>
           )}
         </div>
@@ -200,7 +201,7 @@ function IncidentCard({
             </h3>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-medium text-slate-500">
-                {siteLabels[incident.site]}
+                {t(`sites.${incident.site}`)}
               </span>
               {incident.systemArea && (
                 <span className="text-xs font-medium text-slate-500">
@@ -209,7 +210,7 @@ function IncidentCard({
               )}
               {incident.resolved && (
                 <Badge className="bg-emerald-100 text-emerald-800">
-                  Resolved
+                  {t("ledger.resolved")}
                 </Badge>
               )}
               {canWrite && (
@@ -248,6 +249,7 @@ export function IncidentList(): React.JSX.Element {
   const [showFilters, setShowFilters] = useState(false);
   const deferredQuery = useDeferredValue(query.trim());
   const { user } = useCurrentAuthUser();
+  const { t } = useLocale();
   const filters: IncidentFilters = {
     entryType,
     severity,
@@ -288,16 +290,16 @@ export function IncidentList(): React.JSX.Element {
     <section aria-label="Ops ledger">
       <div className="mb-5">
         <SectionHeading
-          title="Ledger"
+          title={t("ledger.title")}
           description={
             entryType === "SERVICE"
-              ? "Newest service entries appear first."
-              : "Newest incidents appear first."
+              ? t("ledger.newestServices")
+              : t("ledger.newestIncidents")
           }
           meta={
             incidentsQuery.data ? (
               <Badge variant="secondary">
-                {incidents.length} shown
+                {t("ledger.shown", { count: incidents.length })}
               </Badge>
             ) : undefined
           }
@@ -320,7 +322,9 @@ export function IncidentList(): React.JSX.Element {
                   : "text-slate-600 hover:text-slate-950",
               )}
             >
-              {value === "INCIDENT" ? "Incidents" : "Services"}
+              {value === "INCIDENT"
+                ? t("entryType.incidents")
+                : t("entryType.services")}
             </button>
           ))}
         </div>
@@ -335,8 +339,8 @@ export function IncidentList(): React.JSX.Element {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search title, description, or system area…"
-              aria-label="Search incidents"
+              placeholder={t("ledger.searchPlaceholder")}
+              aria-label={t("ledger.searchAria")}
               className="h-11 bg-white pl-9 md:h-9"
             />
           </div>
@@ -349,7 +353,7 @@ export function IncidentList(): React.JSX.Element {
             className="h-11 shrink-0 md:hidden"
           >
             <SlidersHorizontal aria-hidden="true" />
-            Filters
+            {t("ledger.filters")}
             {activeFilterCount > 0 && (
               <span className="rounded-full bg-slate-950 px-1.5 text-xs text-white">
                 {activeFilterCount}
@@ -380,22 +384,22 @@ export function IncidentList(): React.JSX.Element {
               }
             >
               <SelectTrigger
-                aria-label="Filter by severity"
+                aria-label={t("ledger.allSeverities")}
                 className="h-9! w-full bg-white"
               >
                 <SelectValue>
                   {(value) =>
                     value === "ALL"
-                      ? "All severities"
-                      : severityLabels[value as SeverityValue]
+                      ? t("ledger.allSeverities")
+                      : t(`severity.${value as SeverityValue}`)
                   }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent align="end">
-                <SelectItem value="ALL">All severities</SelectItem>
+                <SelectItem value="ALL">{t("ledger.allSeverities")}</SelectItem>
                 {severityValues.map((value) => (
                   <SelectItem key={value} value={value}>
-                    {severityLabels[value]}
+                    {t(`severity.${value}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -407,22 +411,22 @@ export function IncidentList(): React.JSX.Element {
             onValueChange={(value) => setSite((value ?? "ALL") as SiteFilter)}
           >
             <SelectTrigger
-              aria-label="Filter by site"
+              aria-label={t("ledger.allSites")}
               className="h-9! w-full bg-white"
             >
               <SelectValue>
                 {(value) =>
                   value === "ALL"
-                    ? "All sites"
-                    : siteLabels[value as SiteValue]
+                    ? t("ledger.allSites")
+                    : t(`sites.${value as SiteValue}`)
                 }
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All sites</SelectItem>
+              <SelectItem value="ALL">{t("ledger.allSites")}</SelectItem>
               {siteValues.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {siteLabels[value]}
+                  {t(`sites.${value}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -433,17 +437,17 @@ export function IncidentList(): React.JSX.Element {
             onValueChange={(value) => setSystemArea(value ?? "ALL")}
           >
             <SelectTrigger
-              aria-label="Filter by system area"
+              aria-label={t("ledger.allSystemAreas")}
               className="h-9! w-full bg-white"
             >
               <SelectValue>
                 {(value) =>
-                  value === "ALL" ? "All system areas" : String(value)
+                  value === "ALL" ? t("ledger.allSystemAreas") : String(value)
                 }
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All system areas</SelectItem>
+              <SelectItem value="ALL">{t("ledger.allSystemAreas")}</SelectItem>
               {facetsQuery.data?.systemAreas.map((value) => (
                 <SelectItem key={value} value={value}>
                   {value}
@@ -454,15 +458,17 @@ export function IncidentList(): React.JSX.Element {
 
           <Select value={tag} onValueChange={(value) => setTag(value ?? "ALL")}>
             <SelectTrigger
-              aria-label="Filter by tag"
+              aria-label={t("ledger.allTags")}
               className="h-9! w-full bg-white"
             >
               <SelectValue>
-                {(value) => (value === "ALL" ? "All tags" : `#${String(value)}`)}
+                {(value) =>
+                  value === "ALL" ? t("ledger.allTags") : `#${String(value)}`
+                }
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All tags</SelectItem>
+              <SelectItem value="ALL">{t("ledger.allTags")}</SelectItem>
               {facetsQuery.data?.tags.map((value) => (
                 <SelectItem key={value} value={value}>
                   #{value}
@@ -480,15 +486,20 @@ export function IncidentList(): React.JSX.Element {
             className="h-9 justify-center text-slate-600"
           >
             <X aria-hidden="true" />
-            Clear
+            {t("ledger.clear")}
           </Button>
         </div>
 
         <div className="mt-2 flex min-h-5 items-start gap-2 text-xs leading-5 text-slate-500">
           <SlidersHorizontal aria-hidden="true" className="size-3.5" />
           {activeFilterCount > 0
-            ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
-            : "Search is instant. Use filters to narrow by site, severity, system area, or tag."}
+            ? t(
+                activeFilterCount === 1
+                  ? "ledger.activeFilters"
+                  : "ledger.activeFiltersPlural",
+                { count: activeFilterCount },
+              )
+            : t("ledger.filterHint")}
           {facetsQuery.isError && (
             <span className="font-medium text-red-700">
               · {facetsQuery.error.message}
@@ -504,7 +515,7 @@ export function IncidentList(): React.JSX.Element {
           <div className="flex items-start gap-3">
             <AlertTriangle aria-hidden="true" className="mt-0.5 size-5" />
             <div>
-              <h3 className="font-semibold">Incident ledger unavailable</h3>
+              <h3 className="font-semibold">{t("ledger.unavailable")}</h3>
               <p className="mt-1 text-sm leading-6 text-red-800">
                 {incidentsQuery.error.message}
               </p>
@@ -516,7 +527,7 @@ export function IncidentList(): React.JSX.Element {
                 className="mt-4 border-red-300 bg-white text-red-900 hover:bg-red-100"
               >
                 <RefreshCw aria-hidden="true" />
-                Try again
+                {t("ledger.tryAgain")}
               </Button>
             </div>
           </div>
@@ -526,13 +537,13 @@ export function IncidentList(): React.JSX.Element {
           <Inbox aria-hidden="true" className="mx-auto size-6 text-slate-400" />
           <h3 className="mt-3 font-semibold text-slate-800">
             {entryType === "SERVICE"
-              ? "No services in this view"
-              : "No incidents in this view"}
+              ? t("ledger.emptyServices")
+              : t("ledger.emptyIncidents")}
           </h3>
           <p className="mt-1 text-sm text-slate-500">
             {activeFilterCount > 0
-              ? "No entries match these filters. Clear one or broaden the search."
-              : "Log the first event to start the knowledge base."}
+              ? t("ledger.emptyFiltered")
+              : t("ledger.emptyDefault")}
           </p>
         </div>
       ) : (
@@ -558,7 +569,9 @@ export function IncidentList(): React.JSX.Element {
                 {incidentsQuery.isFetchingNextPage && (
                   <LoaderCircle aria-hidden="true" className="animate-spin" />
                 )}
-                {incidentsQuery.isFetchingNextPage ? "Loading…" : "Load older"}
+                {incidentsQuery.isFetchingNextPage
+                  ? t("ledger.loading")
+                  : t("ledger.loadOlder")}
               </Button>
             </div>
           )}

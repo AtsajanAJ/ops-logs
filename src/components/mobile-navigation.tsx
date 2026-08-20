@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 
 import { DraftCountBadge } from "@/components/draft-notification";
 import { IncidentForm } from "@/components/incident-form";
+import { useLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,10 +29,10 @@ import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 import { cn } from "@/lib/utils";
 
 const MOBILE_ITEMS = [
-  { href: "/", label: "Incidents", icon: BookOpenText },
-  { href: "/summaries", label: "Prepare", icon: WandSparkles },
-  { href: "/reports", label: "Reports", icon: Library },
-  { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
+  { href: "/", labelKey: "nav.incidents", icon: BookOpenText },
+  { href: "/summaries", labelKey: "nav.prepare", icon: WandSparkles },
+  { href: "/reports", labelKey: "nav.reports", icon: Library },
+  { href: "/dashboard", labelKey: "nav.dashboard", icon: BarChart3 },
 ] as const;
 
 function MobileLink({
@@ -40,6 +41,7 @@ function MobileLink({
   item: (typeof MOBILE_ITEMS)[number];
 }): React.JSX.Element {
   const pathname = usePathname();
+  const { t } = useLocale();
   const Icon = item.icon;
   const isActive =
     item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -54,7 +56,7 @@ function MobileLink({
       )}
     >
       <Icon aria-hidden="true" className="size-5" />
-      <span className="truncate">{item.label}</span>
+      <span className="truncate">{t(item.labelKey)}</span>
       {item.href === "/summaries" && (
         <span className="absolute top-1.5 left-1/2 ml-1">
           <DraftCountBadge />
@@ -72,11 +74,12 @@ function MobileLink({
 
 export function MobileNavigation(): React.JSX.Element {
   const { user } = useCurrentAuthUser();
+  const { t } = useLocale();
   const canWrite = user ? writableSitesFor(user).length > 0 : false;
 
   return (
     <nav
-      aria-label="Mobile primary navigation"
+      aria-label={t("nav.mobilePrimary")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-md lg:hidden"
     >
       <ul className="mx-auto grid h-16 max-w-2xl grid-cols-5 px-1">
@@ -100,7 +103,7 @@ export function MobileNavigation(): React.JSX.Element {
                 <span className="ui-transition flex size-12 items-center justify-center rounded-full border-4 border-white bg-slate-950 text-white shadow-lg transition-transform active:scale-95">
                   <Plus aria-hidden="true" className="size-5" />
                 </span>
-                <span>Add</span>
+                <span>{t("nav.add")}</span>
               </DialogTrigger>
               <DialogContent
                 showCloseButton={false}
@@ -108,10 +111,10 @@ export function MobileNavigation(): React.JSX.Element {
               >
                 <DialogHeader className="sticky top-0 z-10 border-b border-slate-200 bg-white px-5 py-4 pr-16 text-left">
                   <DialogTitle className="text-lg font-semibold">
-                    Log an incident
+                    {t("mobileAdd.title")}
                   </DialogTitle>
                   <DialogDescription>
-                    Capture the essentials now. You can resolve it later.
+                    {t("mobileAdd.description")}
                   </DialogDescription>
                   <DialogClose
                     render={
@@ -124,7 +127,7 @@ export function MobileNavigation(): React.JSX.Element {
                     }
                   >
                     <X aria-hidden="true" />
-                    <span className="sr-only">Close incident form</span>
+                    <span className="sr-only">{t("mobileAdd.close")}</span>
                   </DialogClose>
                 </DialogHeader>
                 <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
@@ -135,7 +138,7 @@ export function MobileNavigation(): React.JSX.Element {
           ) : (
             <div className="flex h-16 flex-col items-center justify-center gap-0.5 text-xs font-medium text-slate-400">
               <Plus aria-hidden="true" className="size-5 opacity-40" />
-              <span>Read-only</span>
+              <span>{t("nav.readOnly")}</span>
             </div>
           )}
         </li>

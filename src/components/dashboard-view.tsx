@@ -21,6 +21,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocale } from "@/components/locale-provider";
 import type { DashboardData } from "@/lib/dashboard";
 import { severityMeta } from "@/lib/incidents";
 
@@ -111,6 +112,7 @@ function MetricCard({
 
 export function DashboardView(): React.JSX.Element {
   const isNarrow = useIsNarrow();
+  const { t } = useLocale();
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", { weeks: 8 }],
     queryFn: fetchDashboard,
@@ -118,7 +120,7 @@ export function DashboardView(): React.JSX.Element {
 
   if (dashboardQuery.isPending) {
     return (
-      <div className="grid gap-6" aria-label="Loading dashboard">
+      <div className="grid gap-6" aria-label={t("dashboard.metrics")}>
         <div className="grid overflow-hidden rounded-xl border border-slate-200 bg-white sm:grid-cols-3">
           {[0, 1, 2].map((item) => (
             <div key={item} className="flex gap-4 border-b border-slate-200 p-5 last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0">
@@ -141,7 +143,7 @@ export function DashboardView(): React.JSX.Element {
   if (dashboardQuery.isError) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-900">
-        <h2 className="font-semibold">Dashboard unavailable</h2>
+        <h2 className="font-semibold">{t("dashboard.unavailable")}</h2>
         <p className="mt-1 text-sm">{dashboardQuery.error.message}</p>
         <Button
           type="button"
@@ -151,7 +153,7 @@ export function DashboardView(): React.JSX.Element {
           className="mt-4 border-red-300 bg-white"
         >
           <RefreshCw aria-hidden="true" />
-          Try again
+          {t("dashboard.tryAgain")}
         </Button>
       </div>
     );
@@ -179,25 +181,25 @@ export function DashboardView(): React.JSX.Element {
   return (
     <div className="grid gap-6">
       <section
-        aria-label="Ops metrics"
+        aria-label={t("dashboard.metrics")}
         className="grid overflow-hidden rounded-xl border border-slate-200 bg-white sm:grid-cols-3 sm:divide-x sm:divide-slate-200"
       >
         <MetricCard
-          label="Incidents"
+          label={t("dashboard.incidents")}
           value={data.totalIncidents}
-          detail="Across the last 8 weeks"
+          detail={t("dashboard.acrossWeeks")}
           icon={<CircleDot aria-hidden="true" className="size-4" />}
         />
         <MetricCard
-          label="Services"
+          label={t("dashboard.services")}
           value={data.totalServices}
-          detail="Logged service work"
+          detail={t("dashboard.loggedService")}
           icon={<Wrench aria-hidden="true" className="size-4" />}
         />
         <MetricCard
-          label="Unresolved"
+          label={t("dashboard.unresolved")}
           value={data.unresolvedIncidents}
-          detail="Still marked open"
+          detail={t("dashboard.stillOpen")}
           icon={<FileWarning aria-hidden="true" className="size-4" />}
         />
       </section>
@@ -206,10 +208,10 @@ export function DashboardView(): React.JSX.Element {
         <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="mb-4 sm:mb-5">
             <h2 className="text-lg font-semibold text-slate-950">
-              Eight-week ops trend
+              {t("dashboard.trendTitle")}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Incident volume by severity, plus service counts.
+              {t("dashboard.trendDescription")}
             </p>
           </div>
           <p className="sr-only">{weeklySummary}</p>
@@ -278,7 +280,7 @@ export function DashboardView(): React.JSX.Element {
                 />
                 <Bar
                   dataKey="services"
-                  name="Services"
+                  name={t("dashboard.services")}
                   fill="#0ea5e9"
                   radius={[4, 4, 0, 0]}
                 />
@@ -290,10 +292,10 @@ export function DashboardView(): React.JSX.Element {
         <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="mb-4 sm:mb-5">
             <h2 className="text-lg font-semibold text-slate-950">
-              Incident severity
+              {t("dashboard.severityTitle")}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Incident count by priority (services excluded).
+              {t("dashboard.severityDescription")}
             </p>
           </div>
           <p className="sr-only">{severitySummary}</p>

@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { canManageUsers } from "@/lib/permissions";
-import { siteLabels, userRoleLabels, type UserRoleValue } from "@/lib/sites";
+import { type UserRoleValue } from "@/lib/sites";
 import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
+import { useLocale } from "@/components/locale-provider";
 
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -30,6 +31,7 @@ function initialsFromName(name: string): string {
 export function ProfileMenu(): React.JSX.Element {
   const router = useRouter();
   const { user, isPending } = useCurrentAuthUser();
+  const { t } = useLocale();
 
   async function handleSignOut(): Promise<void> {
     await authClient.signOut();
@@ -41,8 +43,8 @@ export function ProfileMenu(): React.JSX.Element {
     return <div className="size-11" aria-hidden="true" />;
   }
 
-  const roleLabel = userRoleLabels[user.role as UserRoleValue] ?? user.role;
-  const siteLabel = user.homeSite ? siteLabels[user.homeSite] : null;
+  const roleLabel = t(`roles.${user.role as UserRoleValue}`);
+  const siteLabel = user.homeSite ? t(`sites.${user.homeSite}`) : null;
   const isAdmin = canManageUsers(user);
 
   return (
@@ -53,7 +55,7 @@ export function ProfileMenu(): React.JSX.Element {
             type="button"
             variant="ghost"
             className="size-11 rounded-full p-0 ring-offset-2 transition-[box-shadow,transform] duration-200 ease-out hover:bg-transparent hover:ring-2 hover:ring-orange-400/70 focus-visible:ring-2 focus-visible:ring-orange-500"
-            aria-label="Open profile menu"
+            aria-label={t("profile.openMenu")}
           />
         }
       >
@@ -86,7 +88,7 @@ export function ProfileMenu(): React.JSX.Element {
             className="cursor-pointer"
           >
             <Settings />
-            Settings
+            {t("profile.settings")}
           </DropdownMenuItem>
           {isAdmin ? (
             <DropdownMenuItem
@@ -94,7 +96,7 @@ export function ProfileMenu(): React.JSX.Element {
               className="cursor-pointer"
             >
               <Users />
-              User access
+              {t("profile.userAccess")}
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuGroup>
@@ -109,7 +111,7 @@ export function ProfileMenu(): React.JSX.Element {
           }}
         >
           <LogOut />
-          Sign out
+          {t("profile.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
