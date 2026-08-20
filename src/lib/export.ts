@@ -3,6 +3,7 @@ export interface ExportIncident {
   title: string;
   description: string;
   severity: string;
+  entryType?: string;
   systemArea: string | null;
   site?: string;
   resolved: boolean;
@@ -46,6 +47,7 @@ export function createIncidentCsv(incidents: ExportIncident[]): string {
     "title",
     "description",
     "severity",
+    "entryType",
     "systemArea",
     "site",
     "resolved",
@@ -61,6 +63,7 @@ export function createIncidentCsv(incidents: ExportIncident[]): string {
       incident.title,
       incident.description,
       incident.severity,
+      incident.entryType ?? "INCIDENT",
       incident.systemArea,
       incident.site ?? "",
       incident.resolved,

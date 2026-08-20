@@ -31,6 +31,7 @@ const fieldNames = [
   "severity",
   "systemArea",
   "site",
+  "entryType",
   "tags",
 ] as const;
 
@@ -75,6 +76,7 @@ export async function createIncident(
     title: formValue(formData, "title"),
     description: formValue(formData, "description"),
     severity: formValue(formData, "severity"),
+    entryType: formValue(formData, "entryType"),
     systemArea: formValue(formData, "systemArea"),
     site: formValue(formData, "site"),
     tags: formValue(formData, "tags"),

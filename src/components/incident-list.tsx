@@ -28,8 +28,11 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  entryTypeLabels,
+  entryTypeValues,
   severityLabels,
   severityValues,
+  type EntryTypeValue,
   type IncidentFacets,
   type IncidentPage,
   type IncidentView,
@@ -45,6 +48,7 @@ type SiteFilter = SiteValue | "ALL";
 type FacetFilter = string | "ALL";
 
 interface IncidentFilters {
+  entryType: EntryTypeValue;
   severity: SeverityFilter;
   site: SiteFilter;
   tag: FacetFilter;
@@ -68,7 +72,10 @@ async function fetchIncidents(
   filters: IncidentFilters,
   cursor: string | null,
 ): Promise<IncidentPage> {
-  const params = new URLSearchParams({ limit: "10" });
+  const params = new URLSearchParams({
+    limit: "10",
+    entryType: filters.entryType,
+  });
   if (filters.severity !== "ALL") {
     params.set("severity", filters.severity);
   }
@@ -172,6 +179,14 @@ function IncidentCard({
             />
             {severityLabels[incident.severity]}
           </Badge>
+          {incident.entryType === "SERVICE" && (
+            <Badge
+              variant="secondary"
+              className="mt-2 bg-sky-50 text-sky-800"
+            >
+              {entryTypeLabels.SERVICE}
+            </Badge>
+          )}
         </div>
 
         <div className="min-w-0">
@@ -220,6 +235,7 @@ function IncidentCard({
 }
 
 export function IncidentList(): React.JSX.Element {
+  const [entryType, setEntryType] = useState<EntryTypeValue>("INCIDENT");
   const [severity, setSeverity] = useState<SeverityFilter>("ALL");
   const [site, setSite] = useState<SiteFilter>("ALL");
   const [tag, setTag] = useState<FacetFilter>("ALL");
@@ -229,6 +245,7 @@ export function IncidentList(): React.JSX.Element {
   const deferredQuery = useDeferredValue(query.trim());
   const { user } = useCurrentAuthUser();
   const filters: IncidentFilters = {
+    entryType,
     severity,
     site,
     tag,
@@ -264,11 +281,15 @@ export function IncidentList(): React.JSX.Element {
   }
 
   return (
-    <section aria-label="Incident ledger">
+    <section aria-label="Ops ledger">
       <div className="mb-5">
         <SectionHeading
-          title="Incident ledger"
-          description="Newest incidents appear first."
+          title="Ledger"
+          description={
+            entryType === "SERVICE"
+              ? "Newest service entries appear first."
+              : "Newest incidents appear first."
+          }
           meta={
             incidentsQuery.data ? (
               <Badge variant="secondary">
@@ -277,6 +298,25 @@ export function IncidentList(): React.JSX.Element {
             ) : undefined
           }
         />
+
+        <div className="mt-4 flex gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
+          {entryTypeValues.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setEntryType(value)}
+              aria-pressed={entryType === value}
+              className={cn(
+                "flex flex-1 items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                entryType === value
+                  ? "bg-white text-slate-950 shadow-sm"
+                  : "text-slate-600 hover:text-slate-950",
+              )}
+            >
+              {value === "INCIDENT" ? "Incidents" : "Services"}
+            </button>
+          ))}
+        </div>
 
         <div className="mt-4 flex gap-2">
           <div className="relative min-w-0 flex-1">
@@ -473,7 +513,9 @@ export function IncidentList(): React.JSX.Element {
         <div className="rounded-xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center">
           <Inbox aria-hidden="true" className="mx-auto size-6 text-slate-400" />
           <h3 className="mt-3 font-semibold text-slate-800">
-            No incidents in this view
+            {entryType === "SERVICE"
+              ? "No services in this view"
+              : "No incidents in this view"}
           </h3>
           <p className="mt-1 text-sm text-slate-500">
             {activeFilterCount > 0

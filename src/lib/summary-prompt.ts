@@ -5,6 +5,7 @@ export function buildSummaryPrompt(input: GenerateSummaryInput): string {
     title: incident.title,
     description: incident.description,
     severity: incident.severity,
+    entryType: incident.entryType,
     systemArea: incident.systemArea,
     rootCause: incident.rootCause,
     resolution: incident.resolution,

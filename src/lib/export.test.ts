@@ -7,6 +7,7 @@ const incident = {
   title: '=SUM(1,2) "ทดสอบ"',
   description: "Line one,\nLine two",
   severity: "HIGH",
+  entryType: "SERVICE",
   systemArea: "Site A",
   resolved: true,
   rootCause: "Configuration drift",
@@ -24,6 +25,7 @@ describe("data export", () => {
     expect(csv).toContain(`"'=SUM(1,2) ""ทดสอบ"""`);
     expect(csv).toContain(`"Line one,\nLine two"`);
     expect(csv).toContain(`"network|ทดสอบ"`);
+    expect(csv).toContain('"SERVICE"');
     expect(csv).toContain("2026-07-27T07:00:00.000Z");
   });
 

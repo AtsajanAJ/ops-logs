@@ -25,6 +25,7 @@ describe("incident validation", () => {
       title: "  Service unavailable  ",
       description: "Requests returned a timeout.",
       severity: "HIGH",
+      entryType: "INCIDENT",
       systemArea: " ",
       site: "BANGKOK",
       tags: "network, timeout",
@@ -34,10 +35,24 @@ describe("incident validation", () => {
       title: "Service unavailable",
       description: "Requests returned a timeout.",
       severity: "HIGH",
+      entryType: "INCIDENT",
       systemArea: undefined,
       site: "BANGKOK",
       tags: ["network", "timeout"],
     });
+  });
+
+  it("rejects invalid entry types", () => {
+    expect(
+      incidentInputSchema.safeParse({
+        title: "Title",
+        description: "Description",
+        severity: "LOW",
+        entryType: "TASK",
+        site: "BANGKOK",
+        tags: "",
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects invalid severity filters", () => {
@@ -50,12 +65,14 @@ describe("incident validation", () => {
     expect(
       incidentFilterSchema.parse({
         severity: "CRITICAL",
+        entryType: "SERVICE",
         query: "network timeout",
         tag: "vpn",
         systemArea: "Site A",
       }),
     ).toEqual({
       severity: "CRITICAL",
+      entryType: "SERVICE",
       query: "network timeout",
       tag: "vpn",
       systemArea: "Site A",

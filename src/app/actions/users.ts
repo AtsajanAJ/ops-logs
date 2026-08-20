@@ -48,13 +48,16 @@ export async function updateUserAccess(
   }
 
   const homeSiteRaw = formData.get("homeSite");
+  const homeSiteNormalized =
+    typeof homeSiteRaw === "string" &&
+    homeSiteRaw.length > 0 &&
+    homeSiteRaw !== "__none__"
+      ? homeSiteRaw
+      : null;
   const parsed = updateUserAccessSchema.safeParse({
     userId: formData.get("userId"),
     role: formData.get("role"),
-    homeSite:
-      typeof homeSiteRaw === "string" && homeSiteRaw.length > 0
-        ? homeSiteRaw
-        : null,
+    homeSite: homeSiteNormalized,
   });
 
   if (!parsed.success) {
@@ -85,7 +88,7 @@ export async function updateUserAccess(
     });
     revalidatePath("/settings/users");
     revalidatePath("/settings");
-    return { status: "success", message: "User access updated." };
+    return { status: "success", message: "Access updated." };
   } catch (error: unknown) {
     console.error("Failed to update user access", error);
     return {

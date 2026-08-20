@@ -18,8 +18,8 @@ export default async function Home(): Promise<React.JSX.Element> {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <PageHeading
-        title="Incident log"
-        description="Capture operational issues while the details are fresh, then search and resolve them from one place."
+        title="Ops log"
+        description="Capture incidents and service work while the details are fresh, then search and resolve them from one place."
         className="mb-6"
       />
 

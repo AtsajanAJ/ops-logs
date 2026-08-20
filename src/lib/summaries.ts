@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { severityValues, type IncidentView } from "@/lib/incidents";
+import { entryTypeValues, severityValues, type IncidentView } from "@/lib/incidents";
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -9,6 +9,7 @@ export const safeIncidentSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().min(1).max(2_000),
   severity: z.enum(severityValues),
+  entryType: z.enum(entryTypeValues),
   systemArea: z.string().trim().max(80).nullable(),
   rootCause: z.string().trim().max(2_000).nullable(),
   resolution: z.string().trim().max(2_000).nullable(),
@@ -113,6 +114,7 @@ export function createSafeIncident(incident: IncidentView): SafeIncident {
     title: maskSensitiveText(incident.title),
     description: maskSensitiveText(incident.description),
     severity: incident.severity,
+    entryType: incident.entryType,
     systemArea: incident.systemArea
       ? maskSensitiveText(incident.systemArea)
       : null,

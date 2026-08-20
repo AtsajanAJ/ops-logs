@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Activity, PanelLeft, PanelLeftClose } from "lucide-react";
 
 import { AppNavigation } from "@/components/app-navigation";
+import { AppTopBar } from "@/components/app-topbar";
 import { MobileNavigation } from "@/components/mobile-navigation";
-import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -106,9 +106,6 @@ export function AppShell({ children }: AppShellProps): React.JSX.Element {
             collapsed ? "px-2" : "px-3",
           )}
         >
-          <div className="mb-2">
-            <UserMenu collapsed={collapsed} />
-          </div>
           <Button
             type="button"
             variant="ghost"
@@ -134,7 +131,8 @@ export function AppShell({ children }: AppShellProps): React.JSX.Element {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="min-h-screen flex-1">{children}</main>
+        <AppTopBar />
+        <main className="min-h-0 flex-1 pb-20 lg:pb-0">{children}</main>
         <MobileNavigation />
       </div>
     </div>

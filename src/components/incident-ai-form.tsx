@@ -30,6 +30,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   initialIncidentActionState,
   initialIncidentDraftState,
+  entryTypeLabels,
+  entryTypeValues,
   severityLabels,
   severityValues,
   SYSTEM_AREAS,
@@ -168,7 +170,34 @@ export function IncidentAiForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-2">
+              <Label htmlFor={`${idPrefix}draft-entry-type`}>Type</Label>
+              <Select
+                name="entryType"
+                defaultValue={draft.entryType ?? "INCIDENT"}
+              >
+                <SelectTrigger
+                  id={`${idPrefix}draft-entry-type`}
+                  className="h-11! w-full bg-white"
+                >
+                  <SelectValue>
+                    {(value) =>
+                      entryTypeLabels[value as keyof typeof entryTypeLabels] ??
+                      entryTypeLabels.INCIDENT
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {entryTypeValues.map((entryType) => (
+                    <SelectItem key={entryType} value={entryType}>
+                      {entryTypeLabels[entryType]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor={`${idPrefix}draft-severity`}>Severity</Label>
               <Select name="severity" defaultValue={draft.severity}>

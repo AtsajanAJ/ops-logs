@@ -40,6 +40,15 @@ export const severityLabels: Record<SeverityValue, string> = {
   LOW: severityMeta.LOW.label,
 };
 
+export const entryTypeValues = ["INCIDENT", "SERVICE"] as const;
+
+export type EntryTypeValue = (typeof entryTypeValues)[number];
+
+export const entryTypeLabels: Record<EntryTypeValue, string> = {
+  INCIDENT: "Incident",
+  SERVICE: "Service",
+};
+
 /**
  * Controlled vocabulary for systemArea.
  * Pick exactly one primary system — keep free-text only via "Other".
@@ -87,6 +96,7 @@ export type IncidentFieldName =
   | "severity"
   | "systemArea"
   | "site"
+  | "entryType"
   | "tags";
 
 export interface IncidentActionState {
@@ -139,6 +149,9 @@ export const incidentInputSchema = z.object({
   severity: z.enum(severityValues, {
     error: "Choose a valid severity.",
   }),
+  entryType: z.enum(entryTypeValues, {
+    error: "Choose Incident or Service.",
+  }),
   systemArea: z
     .string()
     .trim()
@@ -157,6 +170,7 @@ export const incidentFilterSchema = z
   .object({
     severity: z.enum(severityValues).optional(),
     site: z.enum(siteValues).optional(),
+    entryType: z.enum(entryTypeValues).optional(),
     start: z.iso.date().optional(),
     end: z.iso.date().optional(),
     query: z.string().trim().max(100).optional(),
@@ -187,6 +201,7 @@ export interface IncidentView {
   title: string;
   description: string;
   severity: SeverityValue;
+  entryType: EntryTypeValue;
   systemArea: string | null;
   site: (typeof siteValues)[number];
   resolved: boolean;
@@ -222,6 +237,7 @@ export interface IncidentDraft {
   title: string;
   description: string;
   severity: SeverityValue;
+  entryType?: EntryTypeValue;
   systemArea?: string;
   site?: (typeof siteValues)[number];
   tags: string[];

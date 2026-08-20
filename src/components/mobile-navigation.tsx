@@ -5,7 +5,6 @@ import {
   BookOpenText,
   Library,
   Plus,
-  Settings,
   WandSparkles,
   X,
 } from "lucide-react";
@@ -33,7 +32,6 @@ const MOBILE_ITEMS = [
   { href: "/summaries", label: "Prepare", icon: WandSparkles },
   { href: "/reports", label: "Reports", icon: Library },
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 function MobileLink({
@@ -51,7 +49,7 @@ function MobileLink({
       href={item.href}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "ui-transition relative flex h-16 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 text-[0.65rem] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-inset",
+        "ui-transition relative flex h-16 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-inset",
         isActive ? "text-slate-950" : "text-slate-500 active:bg-slate-100",
       )}
     >
@@ -81,7 +79,7 @@ export function MobileNavigation(): React.JSX.Element {
       aria-label="Mobile primary navigation"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-md lg:hidden"
     >
-      <ul className="mx-auto grid h-16 max-w-2xl grid-cols-6 px-0.5">
+      <ul className="mx-auto grid h-16 max-w-2xl grid-cols-5 px-1">
         <li>
           <MobileLink item={MOBILE_ITEMS[0]} />
         </li>
@@ -95,7 +93,7 @@ export function MobileNavigation(): React.JSX.Element {
                 render={
                   <button
                     type="button"
-                    className="absolute inset-x-0 -top-3 mx-auto flex w-full flex-col items-center gap-1 rounded-lg text-[0.65rem] font-semibold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+                    className="absolute inset-x-0 -top-3 mx-auto flex w-full flex-col items-center gap-1 rounded-lg text-xs font-semibold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
                   />
                 }
               >
@@ -135,7 +133,7 @@ export function MobileNavigation(): React.JSX.Element {
               </DialogContent>
             </Dialog>
           ) : (
-            <div className="flex h-16 flex-col items-center justify-center gap-0.5 text-[0.65rem] font-medium text-slate-400">
+            <div className="flex h-16 flex-col items-center justify-center gap-0.5 text-xs font-medium text-slate-400">
               <Plus aria-hidden="true" className="size-5 opacity-40" />
               <span>Read-only</span>
             </div>
@@ -146,9 +144,6 @@ export function MobileNavigation(): React.JSX.Element {
         </li>
         <li>
           <MobileLink item={MOBILE_ITEMS[3]} />
-        </li>
-        <li>
-          <MobileLink item={MOBILE_ITEMS[4]} />
         </li>
       </ul>
     </nav>

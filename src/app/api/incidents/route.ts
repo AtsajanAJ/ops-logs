@@ -19,6 +19,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const parsedFilters = incidentFilterSchema.safeParse({
     severity: request.nextUrl.searchParams.get("severity") || undefined,
     site: request.nextUrl.searchParams.get("site") || undefined,
+    entryType: request.nextUrl.searchParams.get("entryType") || undefined,
     start: request.nextUrl.searchParams.get("start") || undefined,
     end: request.nextUrl.searchParams.get("end") || undefined,
     query: request.nextUrl.searchParams.get("query") || undefined,
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const {
       severity,
       site,
+      entryType,
       start,
       end,
       query,
@@ -51,6 +53,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       where: {
         severity,
         site,
+        entryType,
         tags: tag ? { has: tag } : undefined,
         systemArea: systemArea
           ? { equals: systemArea, mode: "insensitive" }
@@ -84,6 +87,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       title: incident.title,
       description: incident.description,
       severity: incident.severity,
+      entryType: incident.entryType,
       systemArea: incident.systemArea,
       site: incident.site,
       resolved: incident.resolved,

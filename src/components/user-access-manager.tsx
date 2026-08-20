@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useId } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
@@ -36,9 +36,32 @@ export type ManagedUser = {
 function SaveButton(): React.JSX.Element {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" size="sm" disabled={pending} className="h-9">
-      {pending ? "Saving…" : "Save"}
+    <Button
+      type="submit"
+      size="sm"
+      disabled={pending}
+      aria-busy={pending}
+      className="h-11 w-full min-w-[7.5rem] sm:w-auto"
+    >
+      {pending ? "Saving…" : "Save access"}
     </Button>
+  );
+}
+
+function FieldLabel({
+  htmlFor,
+  children,
+}: {
+  htmlFor: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <Label
+      htmlFor={htmlFor}
+      className="text-xs leading-4 font-medium text-slate-500"
+    >
+      {children}
+    </Label>
   );
 }
 
@@ -47,24 +70,24 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
     updateUserAccess,
     initialUpdateUserAccessState,
   );
-
-  useEffect(() => {
-    if (state.status === "success") {
-      // Server revalidates the page; no client cache to clear.
-    }
-  }, [state]);
+  const messageId = useId();
+  const roleId = `role-${user.id}`;
+  const siteId = `site-${user.id}`;
 
   return (
     <form
       action={action}
-      className="grid gap-3 border-b border-slate-200 py-4 last:border-b-0 sm:grid-cols-[minmax(0,1.2fr)_repeat(2,minmax(8rem,0.7fr))_auto] sm:items-end"
+      className="grid gap-x-4 gap-y-3 border-b border-slate-200 py-5 last:border-b-0 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-start"
     >
       <input type="hidden" name="userId" value={user.id} />
-      <div className="min-w-0">
+
+      <div className="min-w-0 sm:pt-5">
         <p className="truncate font-medium text-slate-950">{user.name}</p>
         <p className="truncate text-sm text-slate-500">{user.email}</p>
         {state.message ? (
           <p
+            id={messageId}
+            role={state.status === "error" ? "alert" : "status"}
             className={
               state.status === "error"
                 ? "mt-1 text-xs text-red-700"
@@ -76,12 +99,14 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
         ) : null}
       </div>
 
-      <div className="grid gap-1.5">
-        <Label htmlFor={`role-${user.id}`} className="text-xs text-slate-500">
-          Role
-        </Label>
+      <div className="grid min-w-0 gap-1.5">
+        <FieldLabel htmlFor={roleId}>Role</FieldLabel>
         <Select name="role" defaultValue={user.role}>
-          <SelectTrigger id={`role-${user.id}`} className="h-9! w-full bg-white">
+          <SelectTrigger
+            id={roleId}
+            className="h-11! w-full! min-w-0 bg-white"
+            aria-describedby={state.message ? messageId : undefined}
+          >
             <SelectValue>
               {(value) =>
                 userRoleLabels[value as keyof typeof userRoleLabels] ??
@@ -99,24 +124,24 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
         </Select>
       </div>
 
-      <div className="grid gap-1.5">
-        <Label
-          htmlFor={`site-${user.id}`}
-          className="text-xs text-slate-500"
-        >
-          Home site
-        </Label>
-        <Select name="homeSite" defaultValue={user.homeSite ?? undefined}>
-          <SelectTrigger id={`site-${user.id}`} className="h-9! w-full bg-white">
+      <div className="grid min-w-0 gap-1.5">
+        <FieldLabel htmlFor={siteId}>Home site</FieldLabel>
+        <Select name="homeSite" defaultValue={user.homeSite ?? "__none__"}>
+          <SelectTrigger
+            id={siteId}
+            className="h-11! w-full! min-w-0 bg-white"
+            aria-describedby={state.message ? messageId : undefined}
+          >
             <SelectValue placeholder="None">
               {(value) =>
-                value
+                value && value !== "__none__"
                   ? siteLabels[value as keyof typeof siteLabels]
                   : "None"
               }
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__none__">None</SelectItem>
             {siteValues.map((site) => (
               <SelectItem key={site} value={site}>
                 {siteLabels[site]}
@@ -126,7 +151,12 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
         </Select>
       </div>
 
-      <SaveButton />
+      <div className="grid min-w-0 gap-1.5">
+        <span className="invisible text-xs leading-4 font-medium" aria-hidden>
+          Action
+        </span>
+        <SaveButton />
+      </div>
     </form>
   );
 }
@@ -143,7 +173,10 @@ export function UserAccessManager({
   }
 
   return (
-    <div className="divide-y-0">
+    <div>
+      <p className="border-b border-slate-100 px-0 pb-4 text-xs leading-5 text-slate-500">
+        Members need a home site. Use None for Visitor or Admin.
+      </p>
       {users.map((user) => (
         <UserAccessRow key={user.id} user={user} />
       ))}

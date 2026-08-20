@@ -25,6 +25,11 @@ enum Site {
   PHUKET
 }
 
+enum EntryType {
+  INCIDENT
+  SERVICE
+}
+
 model User {
   id            String        @id
   name          String
@@ -98,6 +103,7 @@ model IncidentLog {
   title       String
   description String
   severity    Severity  @default(LOW)
+  entryType   EntryType @default(INCIDENT)
   systemArea  String?
   site        Site      @default(BANGKOK)
   resolved    Boolean   @default(false)
@@ -112,6 +118,7 @@ model IncidentLog {
   @@index([createdAt])
   @@index([severity, createdAt])
   @@index([site, createdAt])
+  @@index([entryType, createdAt])
   @@index([createdById])
 }
 

@@ -20,6 +20,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   initialIncidentActionState,
+  entryTypeLabels,
+  entryTypeValues,
   severityLabels,
   severityValues,
   SYSTEM_AREAS,
@@ -76,6 +78,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   const siteLocked = writableSites.length === 1;
   const titleId = `${idPrefix}title`;
   const titleErrorId = `${idPrefix}title-error`;
+  const entryTypeId = `${idPrefix}entry-type`;
   const severityId = `${idPrefix}severity`;
   const siteId = `${idPrefix}site`;
   const systemAreaId = `${idPrefix}system-area`;
@@ -117,7 +120,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
     >
       <div className="grid gap-2">
         <Label htmlFor={titleId}>
-          Incident title <span className="text-red-600" aria-hidden="true">*</span>
+          Title <span className="text-red-600" aria-hidden="true">*</span>
         </Label>
         <Input
           id={titleId}
@@ -135,7 +138,35 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-2">
+          <Label htmlFor={entryTypeId}>
+            Type <span className="text-red-600" aria-hidden="true">*</span>
+          </Label>
+          <Select name="entryType" defaultValue="INCIDENT">
+            <SelectTrigger
+              id={entryTypeId}
+              className="h-11! w-full bg-white"
+              aria-invalid={Boolean(state.fieldErrors.entryType)}
+            >
+              <SelectValue>
+                {(value) =>
+                  entryTypeLabels[value as keyof typeof entryTypeLabels] ??
+                  entryTypeLabels.INCIDENT
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {entryTypeValues.map((entryType) => (
+                <SelectItem key={entryType} value={entryType}>
+                  {entryTypeLabels[entryType]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FieldError message={state.fieldErrors.entryType} />
+        </div>
+
         <div className="grid gap-2">
           <Label htmlFor={severityId}>
             Severity <span className="text-red-600" aria-hidden="true">*</span>
