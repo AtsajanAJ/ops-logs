@@ -3,9 +3,10 @@
 import {
   BarChart3,
   BookOpenText,
-  FileClock,
+  Library,
   Plus,
   Settings,
+  WandSparkles,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -27,7 +28,8 @@ import { cn } from "@/lib/utils";
 
 const MOBILE_ITEMS = [
   { href: "/", label: "Incidents", icon: BookOpenText },
-  { href: "/summaries", label: "Reports", icon: FileClock },
+  { href: "/summaries", label: "Prepare", icon: WandSparkles },
+  { href: "/reports", label: "Reports", icon: Library },
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
@@ -47,7 +49,7 @@ function MobileLink({
       href={item.href}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "ui-transition relative flex h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-inset",
+        "ui-transition relative flex h-16 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 text-[0.65rem] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-inset",
         isActive ? "text-slate-950" : "text-slate-500 active:bg-slate-100",
       )}
     >
@@ -74,7 +76,7 @@ export function MobileNavigation(): React.JSX.Element {
       aria-label="Mobile primary navigation"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-md lg:hidden"
     >
-      <ul className="mx-auto grid h-16 max-w-lg grid-cols-5 px-1">
+      <ul className="mx-auto grid h-16 max-w-2xl grid-cols-6 px-0.5">
         <li>
           <MobileLink item={MOBILE_ITEMS[0]} />
         </li>
@@ -87,12 +89,12 @@ export function MobileNavigation(): React.JSX.Element {
               render={
                 <button
                   type="button"
-                  className="absolute inset-x-0 -top-3 mx-auto flex w-full flex-col items-center gap-1 rounded-lg text-xs font-semibold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+                  className="absolute inset-x-0 -top-3 mx-auto flex w-full flex-col items-center gap-1 rounded-lg text-[0.65rem] font-semibold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
                 />
               }
             >
-              <span className="ui-transition flex size-13 items-center justify-center rounded-full border-4 border-white bg-slate-950 text-white shadow-lg transition-transform active:scale-95">
-                <Plus aria-hidden="true" className="size-6" />
+              <span className="ui-transition flex size-12 items-center justify-center rounded-full border-4 border-white bg-slate-950 text-white shadow-lg transition-transform active:scale-95">
+                <Plus aria-hidden="true" className="size-5" />
               </span>
               <span>Add</span>
             </DialogTrigger>
@@ -132,6 +134,9 @@ export function MobileNavigation(): React.JSX.Element {
         </li>
         <li>
           <MobileLink item={MOBILE_ITEMS[3]} />
+        </li>
+        <li>
+          <MobileLink item={MOBILE_ITEMS[4]} />
         </li>
       </ul>
     </nav>

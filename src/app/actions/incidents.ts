@@ -2,14 +2,22 @@
 
 import { revalidatePath } from "next/cache";
 
+import {
+  GeminiConfigurationError,
+  GeminiRateLimitError,
+  generateIncidentDraft,
+} from "@/lib/gemini";
 import { getDb } from "@/lib/db";
 import {
+  incidentDraftInputSchema,
   incidentInputSchema,
   resolveIncidentSchema,
   type IncidentActionState,
+  type IncidentDraftActionState,
   type IncidentFieldName,
   type IncidentLifecycleActionState,
 } from "@/lib/incidents";
+import { maskSensitiveText } from "@/lib/summaries";
 
 const fieldNames = [
   "title",
@@ -140,7 +148,46 @@ export async function reopenIncident(
     };
   }
 }
-// Delete Incident Button
+export async function draftIncidentFromNotes(
+  _previousState: IncidentDraftActionState,
+  formData: FormData,
+): Promise<IncidentDraftActionState> {
+  const parsed = incidentDraftInputSchema.safeParse({
+    notes: typeof formData.get("notes") === "string" ? formData.get("notes") : "",
+    confirmedAnonymized:
+      formData.get("confirmedAnonymized") === "true" ? true : false,
+  });
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message:
+        parsed.error.issues[0]?.message ?? "Check input and try again.",
+    };
+  }
+
+  try {
+    const maskedNotes = maskSensitiveText(parsed.data.notes);
+    const draft = await generateIncidentDraft(maskedNotes);
+
+    return {
+      status: "success",
+      message: "Draft generated. Review and edit before saving.",
+      draft,
+    };
+  } catch (error: unknown) {
+    if (error instanceof GeminiConfigurationError) {
+      return { status: "error", message: error.message };
+    }
+    if (error instanceof GeminiRateLimitError) {
+      return { status: "error", message: error.message };
+    }
+    const message =
+      error instanceof Error ? error.message : "Draft generation failed.";
+    return { status: "error", message };
+  }
+}
+
 export async function deleteIncident(
   _previousState: IncidentLifecycleActionState,
   formData: FormData,

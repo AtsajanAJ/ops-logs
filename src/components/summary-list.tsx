@@ -2,10 +2,12 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   ChevronDown,
+  ExternalLink,
   FileText,
   LoaderCircle,
   RefreshCw,
@@ -16,14 +18,16 @@ import {
   markSummaryReviewed,
   updateSummaryDraft,
 } from "@/app/actions/summaries";
+import { SummaryDeleteDialog } from "@/components/summary-delete-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
   initialSummaryActionState,
   type SummaryView,
 } from "@/lib/summaries";
+import { cn } from "@/lib/utils";
 
 interface DateRange {
   weekStart: string;
@@ -134,49 +138,61 @@ function SummaryCard({
 
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <h3>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
-          aria-controls={`summary-panel-${summary.id}`}
-          className="ui-transition flex min-h-16 w-full items-center justify-between gap-4 bg-slate-50 px-4 py-3 text-left outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-inset sm:px-5"
-        >
-          <span className="min-w-0">
-            <span className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold text-slate-950">
-                {dateFormatter.format(new Date(summary.weekStart))} –{" "}
-                {dateFormatter.format(new Date(summary.weekEnd))}
+      <div className="flex items-stretch bg-slate-50">
+        <h3 className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            aria-controls={`summary-panel-${summary.id}`}
+            className="ui-transition flex min-h-16 w-full items-center justify-between gap-4 px-4 py-3 text-left outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-inset sm:px-5"
+          >
+            <span className="min-w-0">
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-slate-950">
+                  {dateFormatter.format(new Date(summary.weekStart))} –{" "}
+                  {dateFormatter.format(new Date(summary.weekEnd))}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={
+                    summary.reviewed
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                      : "border-amber-300 bg-amber-50 text-amber-800"
+                  }
+                >
+                  {summary.reviewed
+                    ? "Reviewed"
+                    : activeDraft
+                      ? "Active draft"
+                      : "Previous draft"}
+                </Badge>
               </span>
-              <Badge
-                variant="outline"
-                className={
-                  summary.reviewed
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                    : "border-amber-300 bg-amber-50 text-amber-800"
-                }
-              >
-                {summary.reviewed
-                  ? "Reviewed"
-                  : activeDraft
-                    ? "Active draft"
-                    : "Previous draft"}
-              </Badge>
+              <span className="mt-1 block text-xs font-normal text-slate-500">
+                {summary.incidentIds.length} incident
+                {summary.incidentIds.length === 1 ? "" : "s"} · Generated{" "}
+                {dateFormatter.format(new Date(summary.createdAt))}
+              </span>
             </span>
-            <span className="mt-1 block text-xs font-normal text-slate-500">
-              {summary.incidentIds.length} incident
-              {summary.incidentIds.length === 1 ? "" : "s"} · Generated{" "}
-              {dateFormatter.format(new Date(summary.createdAt))}
-            </span>
-          </span>
-          <ChevronDown
-            aria-hidden="true"
-            className={`ui-transition size-5 shrink-0 text-slate-500 transition-transform ${
-              expanded ? "rotate-180" : ""
-            }`}
-          />
-        </button>
-      </h3>
+            <ChevronDown
+              aria-hidden="true"
+              className={`ui-transition size-5 shrink-0 text-slate-500 transition-transform ${
+                expanded ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        </h3>
+        <Link
+          href={`/reports/${summary.id}`}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "m-2 h-11 shrink-0 self-center px-3 text-slate-600 sm:h-9",
+          )}
+        >
+          <ExternalLink aria-hidden="true" className="size-3.5" />
+          View
+        </Link>
+      </div>
 
       <div
         id={`summary-panel-${summary.id}`}
@@ -217,13 +233,16 @@ function SummaryCard({
                   ? "Unsaved changes — save before marking reviewed."
                   : "All changes saved. This draft is ready for final review."}
               </p>
-              <form action={reviewAction}>
-                <input type="hidden" name="id" value={summary.id} />
-                <PendingButton
-                  kind="review"
-                  disabled={hasUnsavedChanges}
-                />
-              </form>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <SummaryDeleteDialog summary={summary} />
+                <form action={reviewAction}>
+                  <input type="hidden" name="id" value={summary.id} />
+                  <PendingButton
+                    kind="review"
+                    disabled={hasUnsavedChanges}
+                  />
+                </form>
+              </div>
             </div>
           </div>
         )}

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  severityLabels,
   severityValues,
   type IncidentFacets,
   type IncidentPage,
@@ -45,13 +46,6 @@ interface IncidentFilters {
   systemArea: FacetFilter;
   query: string;
 }
-
-const severityLabels: Record<SeverityValue, string> = {
-  LOW: "Low",
-  MEDIUM: "Medium",
-  HIGH: "High",
-  CRITICAL: "Critical",
-};
 
 const severityStyles: Record<SeverityValue, string> = {
   LOW: "bg-severity-low",

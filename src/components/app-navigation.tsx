@@ -1,6 +1,12 @@
 "use client";
 
-import { BarChart3, BookOpenText, FileClock, Settings } from "lucide-react";
+import {
+  BarChart3,
+  BookOpenText,
+  Library,
+  Settings,
+  WandSparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,9 +22,15 @@ const NAV_ITEMS = [
   },
   {
     href: "/summaries",
-    label: "Reports",
-    desktopLabel: "Reports",
-    icon: FileClock,
+    label: "Prepare",
+    desktopLabel: "Prepare",
+    icon: WandSparkles,
+  },
+  {
+    href: "/reports",
+    label: "Weekly reports",
+    desktopLabel: "Weekly reports",
+    icon: Library,
   },
   {
     href: "/dashboard",
@@ -34,12 +46,18 @@ const NAV_ITEMS = [
   },
 ] as const;
 
-export function AppNavigation(): React.JSX.Element {
+interface AppNavigationProps {
+  collapsed?: boolean;
+}
+
+export function AppNavigation({
+  collapsed = false,
+}: AppNavigationProps): React.JSX.Element {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Primary navigation" className="hidden lg:block">
-      <ul className="flex items-center gap-1">
+    <nav id="primary-sidebar-nav" aria-label="Primary navigation">
+      <ul className="flex flex-col gap-1">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -48,20 +66,38 @@ export function AppNavigation(): React.JSX.Element {
               : pathname.startsWith(item.href);
 
           return (
-            <li key={item.href} className="min-w-0">
+            <li key={item.href}>
               <Link
                 href={item.href}
+                title={item.desktopLabel}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "ui-transition flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2",
+                  "ui-transition relative flex h-10 w-full items-center rounded-lg text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2",
+                  collapsed ? "justify-center px-0" : "gap-2.5 px-3",
                   isActive
                     ? "bg-slate-950 text-white shadow-sm"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
                 )}
               >
                 <Icon aria-hidden="true" className="size-4 shrink-0" />
-                <span>{item.desktopLabel}</span>
-                {item.href === "/summaries" && <DraftCountBadge />}
+                {collapsed ? (
+                  <span className="sr-only">{item.desktopLabel}</span>
+                ) : (
+                  <span className="min-w-0 flex-1 truncate">
+                    {item.desktopLabel}
+                  </span>
+                )}
+                {item.href === "/summaries" && (
+                  <span
+                    className={cn(
+                      collapsed
+                        ? "absolute top-1 right-1"
+                        : "ml-auto shrink-0",
+                    )}
+                  >
+                    <DraftCountBadge />
+                  </span>
+                )}
               </Link>
             </li>
           );

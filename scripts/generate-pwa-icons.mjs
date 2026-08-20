@@ -1,4 +1,4 @@
-const sharp = require("sharp");
+import sharp from "sharp";
 
 function makeSvg(size, { maskable = false } = {}) {
   const pad = size * 0.18;

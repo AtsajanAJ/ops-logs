@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { LoaderCircle, Plus } from "lucide-react";
+import { LoaderCircle, PenLine, Plus, WandSparkles } from "lucide-react";
 
 import { createIncident } from "@/app/actions/incidents";
+import { IncidentAiForm } from "@/components/incident-ai-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,15 +20,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   initialIncidentActionState,
+  severityLabels,
   severityValues,
+  SYSTEM_AREAS,
 } from "@/lib/incidents";
-
-const severityLabels = {
-  LOW: "Low",
-  MEDIUM: "Medium",
-  HIGH: "High",
-  CRITICAL: "Critical",
-} as const;
+import { cn } from "@/lib/utils";
 
 function SubmitButton(): React.JSX.Element {
   const { pending } = useFormStatus();
@@ -63,13 +60,7 @@ function FieldError({ message }: FieldErrorProps): React.JSX.Element | null {
   );
 }
 
-interface IncidentFormProps {
-  idPrefix?: string;
-}
-
-export function IncidentForm({
-  idPrefix = "",
-}: IncidentFormProps): React.JSX.Element {
+function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   const [state, formAction] = useActionState(
     createIncident,
     initialIncidentActionState,
@@ -140,7 +131,8 @@ export function IncidentForm({
             >
               <SelectValue>
                 {(value) =>
-                  severityLabels[value as keyof typeof severityLabels] ?? "Low"
+                  severityLabels[value as keyof typeof severityLabels] ??
+                  severityLabels.LOW
                 }
               </SelectValue>
             </SelectTrigger>
@@ -159,14 +151,24 @@ export function IncidentForm({
           <Label htmlFor={systemAreaId}>
             System area <span className="font-normal text-slate-500">(optional)</span>
           </Label>
-          <Input
-            id={systemAreaId}
-            name="systemArea"
-            placeholder="Network, PACS, access"
-            maxLength={80}
-            aria-invalid={Boolean(state.fieldErrors.systemArea)}
-            className="h-11 bg-white"
-          />
+          <Select name="systemArea">
+            <SelectTrigger
+              id={systemAreaId}
+              className="h-11! w-full bg-white"
+              aria-invalid={Boolean(state.fieldErrors.systemArea)}
+            >
+              <SelectValue placeholder="Select system area">
+                {(value) => (value ? String(value) : "Select system area")}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {SYSTEM_AREAS.map((area) => (
+                <SelectItem key={area} value={area}>
+                  {area}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <FieldError message={state.fieldErrors.systemArea} />
         </div>
       </div>
@@ -195,12 +197,15 @@ export function IncidentForm({
         <Input
           id={tagsId}
           name="tags"
-          placeholder="vpn, access, update"
+          placeholder="vpn, outage, timeout"
           maxLength={250}
           aria-invalid={Boolean(state.fieldErrors.tags)}
           className="h-11 bg-white"
         />
-        <p className="text-xs text-slate-500">Separate up to 8 tags with commas.</p>
+        <p className="text-xs text-slate-500">
+          Prefer: outage, slow, timeout, error, disconnect, login, permission,
+          config, update, hardware, vendor, workaround, intermittent.
+        </p>
         <FieldError message={state.fieldErrors.tags} />
       </div>
 
@@ -225,5 +230,56 @@ export function IncidentForm({
         <SubmitButton />
       </div>
     </form>
+  );
+}
+
+type Mode = "manual" | "ai";
+
+interface IncidentFormProps {
+  idPrefix?: string;
+}
+
+export function IncidentForm({
+  idPrefix = "",
+}: IncidentFormProps): React.JSX.Element {
+  const [mode, setMode] = useState<Mode>("manual");
+
+  return (
+    <div className="grid gap-5">
+      <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
+        <button
+          type="button"
+          onClick={() => setMode("manual")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            mode === "manual"
+              ? "bg-white text-slate-950 shadow-sm"
+              : "text-slate-600 hover:text-slate-950",
+          )}
+        >
+          <PenLine aria-hidden="true" className="size-3.5" />
+          Manual
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("ai")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            mode === "ai"
+              ? "bg-white text-slate-950 shadow-sm"
+              : "text-slate-600 hover:text-slate-950",
+          )}
+        >
+          <WandSparkles aria-hidden="true" className="size-3.5" />
+          AI assist
+        </button>
+      </div>
+
+      {mode === "manual" ? (
+        <ManualForm idPrefix={idPrefix} />
+      ) : (
+        <IncidentAiForm idPrefix={`${idPrefix}ai-`} />
+      )}
+    </div>
   );
 }

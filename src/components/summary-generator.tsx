@@ -8,10 +8,12 @@ import {
   type FormEvent,
 } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarRange,
   ChevronDown,
+  ExternalLink,
   LoaderCircle,
   LockKeyhole,
   ShieldAlert,
@@ -361,16 +363,27 @@ function PrivacyEditor({
       </div>
 
       <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <p
-          aria-live="polite"
-          className={
-            state.status === "error"
-              ? "text-sm font-medium text-red-700"
-              : "text-sm font-medium text-emerald-700"
-          }
-        >
-          {state.message}
-        </p>
+        <div className="min-w-0">
+          <p
+            aria-live="polite"
+            className={
+              state.status === "error"
+                ? "text-sm font-medium text-red-700"
+                : "text-sm font-medium text-emerald-700"
+            }
+          >
+            {state.message}
+          </p>
+          {state.status === "success" && state.summaryId && (
+            <Link
+              href={`/reports/${state.summaryId}`}
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
+            >
+              <ExternalLink aria-hidden="true" className="size-3.5" />
+              Open in weekly reports
+            </Link>
+          )}
+        </div>
         <GenerateButton confirmed={confirmed} />
       </div>
     </form>

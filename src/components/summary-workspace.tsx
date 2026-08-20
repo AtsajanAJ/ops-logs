@@ -22,7 +22,7 @@ export function SummaryWorkspace({
     <div className="grid gap-12">
       <section aria-label="Prepare safe report data">
         <SectionHeading
-          title="1. Prepare safe data"
+          title="Prepare safe data"
           description="Choose a week and verify every field before anything is sent to Gemini."
           className="mb-5"
         />
@@ -34,7 +34,7 @@ export function SummaryWorkspace({
 
       <section aria-label="Review report drafts">
         <SectionHeading
-          title="2. Review drafts"
+          title="Review drafts"
           description="Edit generated reports, save changes, and mark the final version as reviewed."
           className="mb-5"
         />

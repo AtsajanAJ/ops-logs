@@ -4,6 +4,81 @@ export const severityValues = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 
 export type SeverityValue = (typeof severityValues)[number];
 
+/** Shared severity labels + criteria. Keep enum values English for DB. */
+export const severityMeta: Record<
+  SeverityValue,
+  { label: string; shortLabel: string; description: string }
+> = {
+  CRITICAL: {
+    label: "Critical",
+    shortLabel: "Crit",
+    description: "System down / unusable",
+  },
+  HIGH: {
+    label: "High",
+    shortLabel: "High",
+    description: "Core function broken / many users impacted",
+  },
+  MEDIUM: {
+    label: "Medium",
+    shortLabel: "Med",
+    description: "Secondary function issue / workaround exists",
+  },
+  LOW: {
+    label: "Low",
+    shortLabel: "Low",
+    description: "Display / cosmetic issue",
+  },
+};
+
+export const severityLabels: Record<SeverityValue, string> = {
+  CRITICAL: severityMeta.CRITICAL.label,
+  HIGH: severityMeta.HIGH.label,
+  MEDIUM: severityMeta.MEDIUM.label,
+  LOW: severityMeta.LOW.label,
+};
+
+/**
+ * Controlled vocabulary for systemArea.
+ * Pick exactly one primary system — keep free-text only via "Other".
+ */
+export const SYSTEM_AREAS = [
+  "Network",
+  "VPN",
+  "PACS",
+  "HIS",
+  "LIS",
+  "Access",
+  "Server",
+  "Endpoint",
+  "Printer",
+  "Email",
+  "Backup",
+  "Other",
+] as const;
+
+export type SystemAreaValue = (typeof SYSTEM_AREAS)[number];
+
+/**
+ * Suggested tags (lowercase). Prefer these over inventing synonyms.
+ * Pattern: symptom / failure-mode + optional context — not site names.
+ */
+export const SUGGESTED_TAGS = [
+  "outage",
+  "slow",
+  "timeout",
+  "error",
+  "disconnect",
+  "login",
+  "permission",
+  "config",
+  "update",
+  "hardware",
+  "vendor",
+  "workaround",
+  "intermittent",
+] as const;
+
 export type IncidentFieldName =
   | "title"
   | "description"
@@ -123,6 +198,36 @@ export interface IncidentFacets {
   tags: string[];
   systemAreas: string[];
 }
+
+export const incidentDraftInputSchema = z.object({
+  notes: z
+    .string()
+    .trim()
+    .min(10, "Describe the problem in at least 10 characters.")
+    .max(2_000, "Keep notes under 2,000 characters."),
+  confirmedAnonymized: z.literal(true, {
+    error: "Confirm you removed real identifiers before generating.",
+  }),
+});
+
+export interface IncidentDraft {
+  title: string;
+  description: string;
+  severity: SeverityValue;
+  systemArea?: string;
+  tags: string[];
+}
+
+export interface IncidentDraftActionState {
+  status: "idle" | "generating" | "success" | "error";
+  message: string;
+  draft?: IncidentDraft;
+}
+
+export const initialIncidentDraftState: IncidentDraftActionState = {
+  status: "idle",
+  message: "",
+};
 
 export function parseTags(value: string): string[] {
   return [

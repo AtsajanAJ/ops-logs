@@ -219,3 +219,35 @@ export async function markSummaryReviewed(
     };
   }
 }
+
+export async function deleteSummaryDraft(
+  _previousState: SummaryActionState,
+  formData: FormData,
+): Promise<SummaryActionState> {
+  const parsedId = summaryIdSchema.safeParse(formString(formData, "id"));
+  if (!parsedId.success) {
+    return { status: "error", message: "The report ID is invalid." };
+  }
+
+  try {
+    const result = await getDb().weeklySummary.deleteMany({
+      where: { id: parsedId.data, reviewed: false },
+    });
+
+    if (result.count === 0) {
+      return {
+        status: "error",
+        message: "Only draft reports can be deleted, or the report no longer exists.",
+      };
+    }
+
+    revalidatePath("/summaries");
+    return { status: "success", message: "Draft report deleted." };
+  } catch (error: unknown) {
+    console.error("Failed to delete summary draft", error);
+    return {
+      status: "error",
+      message: "The draft could not be deleted. Try again.",
+    };
+  }
+}

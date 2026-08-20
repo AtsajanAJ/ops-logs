@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardData } from "@/lib/dashboard";
+import { severityMeta } from "@/lib/incidents";
 
 const severityColors: Record<string, string> = {
   CRITICAL: "var(--severity-critical)",
@@ -31,10 +32,10 @@ const severityColors: Record<string, string> = {
 };
 
 const severityShortLabels: Record<string, string> = {
-  CRITICAL: "Crit",
-  HIGH: "High",
-  MEDIUM: "Med",
-  LOW: "Low",
+  CRITICAL: severityMeta.CRITICAL.shortLabel,
+  HIGH: severityMeta.HIGH.shortLabel,
+  MEDIUM: severityMeta.MEDIUM.shortLabel,
+  LOW: severityMeta.LOW.shortLabel,
 };
 
 const NARROW_QUERY = "(max-width: 639px)";
@@ -248,22 +249,27 @@ export function DashboardView(): React.JSX.Element {
                   contentStyle={tooltipStyle}
                   wrapperStyle={{ outline: "none" }}
                 />
-                <Bar dataKey="low" name="Low" stackId="severity" fill="var(--severity-low)" />
+                <Bar
+                  dataKey="low"
+                  name={severityMeta.LOW.label}
+                  stackId="severity"
+                  fill="var(--severity-low)"
+                />
                 <Bar
                   dataKey="medium"
-                  name="Medium"
+                  name={severityMeta.MEDIUM.label}
                   stackId="severity"
                   fill="var(--severity-medium)"
                 />
                 <Bar
                   dataKey="high"
-                  name="High"
+                  name={severityMeta.HIGH.label}
                   stackId="severity"
                   fill="var(--severity-high)"
                 />
                 <Bar
                   dataKey="critical"
-                  name="Critical"
+                  name={severityMeta.CRITICAL.label}
                   stackId="severity"
                   fill="var(--severity-critical)"
                   radius={[4, 4, 0, 0]}
