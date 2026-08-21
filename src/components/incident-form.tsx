@@ -7,6 +7,7 @@ import { LoaderCircle, PenLine, Plus, WandSparkles } from "lucide-react";
 
 import { createIncident } from "@/app/actions/incidents";
 import { IncidentAiForm } from "@/components/incident-ai-form";
+import { SystemAreaField } from "@/components/system-area-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +23,6 @@ import {
   initialIncidentActionState,
   entryTypeValues,
   severityValues,
-  SYSTEM_AREAS,
   type EntryTypeValue,
 } from "@/lib/incidents";
 import { writableSitesFor } from "@/lib/permissions";
@@ -77,6 +77,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   const defaultSite = writableSites[0] ?? "BANGKOK";
   const siteLocked = writableSites.length === 1;
   const [entryType, setEntryType] = useState<EntryTypeValue>("INCIDENT");
+  const [systemAreaKey, setSystemAreaKey] = useState(0);
   const { t } = useLocale();
   const titleId = `${idPrefix}title`;
   const titleErrorId = `${idPrefix}title-error`;
@@ -92,6 +93,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
 
     formRef.current?.reset();
     setEntryType("INCIDENT");
+    setSystemAreaKey((key) => key + 1);
     void queryClient.invalidateQueries({ queryKey: ["incidents"] });
   }, [queryClient, state]);
 
@@ -261,26 +263,15 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
             {t("form.optional")}
           </span>
         </Label>
-        <Select name="systemArea">
-          <SelectTrigger
-            id={systemAreaId}
-            className="h-11! w-full bg-white"
-            aria-invalid={Boolean(state.fieldErrors.systemArea)}
-          >
-            <SelectValue placeholder={t("form.selectSystemArea")}>
-              {(value) =>
-                value ? String(value) : t("form.selectSystemArea")
-              }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {SYSTEM_AREAS.map((area) => (
-              <SelectItem key={area} value={area}>
-                {area}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SystemAreaField
+          key={systemAreaKey}
+          id={systemAreaId}
+          invalid={Boolean(state.fieldErrors.systemArea)}
+          selectPlaceholder={t("form.selectSystemArea")}
+          customPlaceholder={t("form.systemAreaPlaceholder")}
+          addLabel={t("form.addCustomSystemArea")}
+          listLabel={t("form.usePresetSystemArea")}
+        />
         <FieldError message={state.fieldErrors.systemArea} />
       </div>
 

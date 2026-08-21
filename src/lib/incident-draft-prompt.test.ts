@@ -18,6 +18,7 @@ describe("buildIncidentDraftPrompt", () => {
     expect(prompt).toContain("System down");
     expect(prompt).toContain("Network");
     expect(prompt).toContain("outage");
+    expect(prompt).toContain("short custom label");
   });
 });
 
@@ -73,6 +74,19 @@ describe("parseIncidentDraftResponse", () => {
 
     const result = parseIncidentDraftResponse(raw);
     expect(result.systemArea).toBeUndefined();
+  });
+
+  it("accepts a custom systemArea value", () => {
+    const raw = JSON.stringify({
+      title: "CT viewer lag",
+      description: "Viewer freezes when opening studies.",
+      severity: "MEDIUM",
+      systemArea: "CT Viewer",
+      tags: ["slow"],
+    });
+
+    const result = parseIncidentDraftResponse(raw);
+    expect(result.systemArea).toBe("CT Viewer");
   });
 
   it("rejects invalid severity values", () => {

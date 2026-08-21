@@ -47,7 +47,7 @@ Return ONLY a JSON object with these fields:
   "title": "concise title, max 120 chars",
   "description": "clear description of what happened, max 2000 chars",
   "severity": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
-  "systemArea": one of ${JSON.stringify(SYSTEM_AREAS)} (omit if unclear),
+  "systemArea": prefer one of ${JSON.stringify(SYSTEM_AREAS)}; a short custom label is OK if nothing fits (omit if unclear),
   "tags": ["lowercase tags", "max 8"]
 }
 
@@ -55,8 +55,8 @@ Severity criteria (pick the best match):
 ${severityGuide()}
 
 systemArea rules:
-- Prefer exactly one value from the allowed list above.
-- If nothing fits, use "Other".
+- Prefer exactly one value from the suggested list above.
+- If nothing fits, use a short custom label (max 80 chars) — not "Other" unless that is accurate.
 - Never invent hospital/site names as systemArea.
 
 tags rules:

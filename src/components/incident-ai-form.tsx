@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { SystemAreaField } from "@/components/system-area-field";
 import {
   initialIncidentActionState,
   initialIncidentDraftState,
@@ -34,7 +35,6 @@ import {
   entryTypeValues,
   severityLabels,
   severityValues,
-  SYSTEM_AREAS,
   type EntryTypeValue,
   type IncidentActionState,
   type IncidentDraft,
@@ -239,35 +239,14 @@ function AiDraftForm({
 
         <div className="grid gap-2">
           <Label htmlFor={`${idPrefix}draft-area`}>System area</Label>
-          <Select
-            name="systemArea"
-            defaultValue={
-              draft.systemArea &&
-              SYSTEM_AREAS.includes(
-                draft.systemArea as (typeof SYSTEM_AREAS)[number],
-              )
-                ? draft.systemArea
-                : draft.systemArea
-                  ? "Other"
-                  : undefined
-            }
-          >
-            <SelectTrigger
-              id={`${idPrefix}draft-area`}
-              className="h-11! w-full bg-white"
-            >
-              <SelectValue placeholder="Select system area">
-                {(value) => (value ? String(value) : "Select system area")}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {SYSTEM_AREAS.map((area) => (
-                <SelectItem key={area} value={area}>
-                  {area}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SystemAreaField
+            id={`${idPrefix}draft-area`}
+            defaultValue={draft.systemArea}
+            selectPlaceholder="Select system area"
+            customPlaceholder="Type a custom system…"
+            addLabel="Add custom system"
+            listLabel="Back to system list"
+          />
         </div>
 
         <div className="grid gap-2">

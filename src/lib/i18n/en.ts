@@ -143,6 +143,9 @@ export const en = {
     readOnlyNotice:
       "You have read-only access. Ask an admin to promote you to Member and assign a home site before logging incidents.",
     selectSystemArea: "Select system area",
+    systemAreaPlaceholder: "Type a custom system…",
+    addCustomSystemArea: "Add custom system",
+    usePresetSystemArea: "Back to system list",
     tagsHint:
       "Prefer: outage, slow, timeout, error, disconnect, login, permission, config, update, hardware, vendor, workaround, intermittent.",
   },

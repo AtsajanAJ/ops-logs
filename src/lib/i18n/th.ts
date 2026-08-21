@@ -145,6 +145,9 @@ export const th = {
     readOnlyNotice:
       "คุณมีสิทธิ์อ่านอย่างเดียว ขอให้ผู้ดูแลปรับเป็นสมาชิกและกำหนดไซต์หลักก่อนบันทึก",
     selectSystemArea: "เลือกระบบ",
+    systemAreaPlaceholder: "พิมพ์ชื่อระบบเอง…",
+    addCustomSystemArea: "เพิ่มระบบเอง",
+    usePresetSystemArea: "กลับไปเลือกรายการ",
     tagsHint:
       "แนะนำ: outage, slow, timeout, error, disconnect, login, permission, config, update, hardware, vendor, workaround, intermittent",
   },

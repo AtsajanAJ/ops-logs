@@ -50,8 +50,8 @@ export const entryTypeLabels: Record<EntryTypeValue, string> = {
 };
 
 /**
- * Controlled vocabulary for systemArea.
- * Pick exactly one primary system — keep free-text only via "Other".
+ * Suggested vocabulary for systemArea.
+ * Prefer one primary system from this list; custom short labels are allowed.
  */
 export const SYSTEM_AREAS = [
   "Network",
