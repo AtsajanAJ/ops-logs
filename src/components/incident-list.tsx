@@ -195,31 +195,34 @@ function IncidentCard({
         </div>
 
         <div className="min-w-0">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <h3 className="text-base leading-6 font-semibold text-slate-950">
+          <div className="flex items-start gap-2">
+            <h3
+              className="min-w-0 flex-1 truncate text-base leading-6 font-semibold text-slate-950"
+              title={incident.title}
+            >
               {incident.title}
             </h3>
-            <div className="flex flex-wrap items-center gap-2">
+            {canWrite && (
+              <div className="flex shrink-0 flex-nowrap items-center gap-2">
+                <IncidentLifecycleDialog incident={incident} />
+                <IncidentDeleteDialog incident={incident} />
+              </div>
+            )}
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-slate-500">
+              {t(`sites.${incident.site}`)}
+            </span>
+            {incident.systemArea && (
               <span className="text-xs font-medium text-slate-500">
-                {t(`sites.${incident.site}`)}
+                {incident.systemArea}
               </span>
-              {incident.systemArea && (
-                <span className="text-xs font-medium text-slate-500">
-                  {incident.systemArea}
-                </span>
-              )}
-              {incident.resolved && (
-                <Badge className="bg-emerald-100 text-emerald-800">
-                  {t("ledger.resolved")}
-                </Badge>
-              )}
-              {canWrite && (
-                <>
-                  <IncidentLifecycleDialog incident={incident} />
-                  <IncidentDeleteDialog incident={incident} />
-                </>
-              )}
-            </div>
+            )}
+            {incident.resolved && (
+              <Badge className="bg-emerald-100 text-emerald-800">
+                {t("ledger.resolved")}
+              </Badge>
+            )}
           </div>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
             {incident.description}
