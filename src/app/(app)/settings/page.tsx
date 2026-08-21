@@ -1,4 +1,4 @@
-import { Database, Download, KeyRound, ShieldAlert, Users } from "lucide-react";
+import { Download, ShieldAlert, Users } from "lucide-react";
 
 import { PageHeading } from "@/components/page-heading";
 import { T } from "@/components/t";
@@ -88,40 +88,6 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
                   <T k="settingsUi.downloadCsv" />
                 </a>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <Database
-              aria-hidden="true"
-              className="mt-0.5 size-5 shrink-0 text-slate-500"
-            />
-            <div>
-              <h2 className="text-lg font-semibold text-slate-950">
-                <T k="settingsUi.neonTitle" />
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                <T k="settingsUi.neonBody" />
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <KeyRound
-              aria-hidden="true"
-              className="mt-0.5 size-5 shrink-0 text-slate-500"
-            />
-            <div>
-              <h2 className="text-lg font-semibold text-slate-950">
-                <T k="settingsUi.credentialsTitle" />
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                <T k="settingsUi.credentialsBody" />
-              </p>
             </div>
           </div>
         </section>

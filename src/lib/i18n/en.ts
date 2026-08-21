@@ -85,7 +85,7 @@ export const en = {
       "Review eight weeks of incident and service volume, unresolved work, and incident severity trends.",
     settingsTitle: "Settings",
     settingsDescription:
-      "Export your records, check recovery coverage, and keep local credentials secure.",
+      "Manage user access and export your operational records.",
     usersTitle: "User access",
     usersDescription:
       "Promote visitors to Member with a home site, or grant Admin. Visitors remain read-only.",
