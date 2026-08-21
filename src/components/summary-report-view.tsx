@@ -10,10 +10,12 @@ import {
   markSummaryReviewed,
   updateSummaryDraft,
 } from "@/app/actions/summaries";
+import { useLocale } from "@/components/locale-provider";
 import { SummaryDeleteDialog } from "@/components/summary-delete-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
 import {
   initialSummaryActionState,
   type SummaryView,
@@ -79,15 +81,55 @@ export function SummaryReportView({
   const rangeLabel = `${dateFormatter.format(new Date(summary.weekStart))} – ${dateFormatter.format(new Date(summary.weekEnd))}`;
   const feedback =
     reviewState.status !== "idle" ? reviewState : saveState;
+  const { t } = useLocale();
 
   useEffect(() => {
-    if (saveState.status !== "success" && reviewState.status !== "success") {
-      return;
+    if (saveState.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifySaved() {
+      await Promise.resolve();
+      if (cancelled) return;
+      void queryClient.invalidateQueries({ queryKey: ["summaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
+      router.refresh();
+      toast.add({
+        type: "success",
+        title: t("toast.summarySavedTitle"),
+        description: t("toast.summarySavedDescription"),
+      });
     }
-    void queryClient.invalidateQueries({ queryKey: ["summaries"] });
-    void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
-    router.refresh();
-  }, [queryClient, reviewState.status, router, saveState.status]);
+
+    void notifySaved();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, router, saveState.status, t]);
+
+  useEffect(() => {
+    if (reviewState.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifyReviewed() {
+      await Promise.resolve();
+      if (cancelled) return;
+      void queryClient.invalidateQueries({ queryKey: ["summaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
+      router.refresh();
+      toast.add({
+        type: "success",
+        title: t("toast.summaryReviewedTitle"),
+        description: t("toast.summaryReviewedDescription"),
+      });
+    }
+
+    void notifyReviewed();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, reviewState.status, router, t]);
 
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">

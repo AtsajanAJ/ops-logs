@@ -439,7 +439,7 @@ export function IncidentList(): React.JSX.Element {
   }
 
   return (
-    <section aria-label="Ops ledger">
+    <section id="ops-ledger" aria-label="Ops ledger">
       <div className="mb-5">
         <SectionHeading
           title={t("ledger.title")}

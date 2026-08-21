@@ -166,6 +166,9 @@ export const en = {
     imageTypeError: "Use JPG, PNG files.",
     imageSizeError: "Each image must be 5 MB or smaller.",
     imageUploadFailed: "Photo upload failed. Try again.",
+    savedTitle: "Entry saved",
+    savedDescription: "Your log was added to the ledger.",
+    viewLedger: "View ledger",
   },
   dashboard: {
     metrics: "Ops metrics",
@@ -181,6 +184,22 @@ export const en = {
     severityDescription: "Incident count by priority (services excluded).",
     unavailable: "Dashboard unavailable",
     tryAgain: "Try again",
+  },
+  toast: {
+    incidentResolvedTitle: "Incident resolved",
+    incidentResolvedDescription: "Resolution was saved to the ledger.",
+    incidentReopenedTitle: "Incident reopened",
+    incidentReopenedDescription: "The case is open again.",
+    incidentDeletedTitle: "Incident deleted",
+    incidentDeletedDescription: "The entry was removed permanently.",
+    summaryDeletedTitle: "Draft deleted",
+    summaryDeletedDescription: "The weekly draft was removed.",
+    summarySavedTitle: "Draft saved",
+    summarySavedDescription: "Your edits were saved.",
+    summaryReviewedTitle: "Marked as reviewed",
+    summaryReviewedDescription: "This report is now final.",
+    userAccessSavedTitle: "Access updated",
+    userAccessSavedDescription: "Role and home site were saved.",
   },
 } as const;
 

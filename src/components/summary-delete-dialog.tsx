@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, Trash2 } from "lucide-react";
 
 import { deleteSummaryDraft } from "@/app/actions/summaries";
+import { useLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toast";
 import {
   initialSummaryActionState,
   type SummaryView,
@@ -61,6 +63,7 @@ export function SummaryDeleteDialog({
     initialSummaryActionState,
   );
   const queryClient = useQueryClient();
+  const { t } = useLocale();
   const onSuccessRef = useRef(onSuccess);
   const rangeLabel = `${dateFormatter.format(new Date(summary.weekStart))} – ${dateFormatter.format(new Date(summary.weekEnd))}`;
 
@@ -69,13 +72,28 @@ export function SummaryDeleteDialog({
   }, [onSuccess]);
 
   useEffect(() => {
-    if (state.status !== "success") {
-      return;
+    if (state.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifyDeleted() {
+      await Promise.resolve();
+      if (cancelled) return;
+      void queryClient.invalidateQueries({ queryKey: ["summaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
+      toast.add({
+        type: "success",
+        title: t("toast.summaryDeletedTitle"),
+        description: t("toast.summaryDeletedDescription"),
+      });
+      onSuccessRef.current?.();
     }
-    void queryClient.invalidateQueries({ queryKey: ["summaries"] });
-    void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
-    onSuccessRef.current?.();
-  }, [queryClient, state.status]);
+
+    void notifyDeleted();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, state.status, t]);
 
   return (
     <Dialog>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useEffect, useId, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { updateUserAccess } from "@/app/actions/users";
+import { useLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/components/ui/toast";
 import type { Site, UserRole } from "@/generated/prisma/client";
 import {
   assignableHomeSitesFor,
@@ -95,6 +97,28 @@ function UserAccessRow({
   const roleId = `role-${user.id}`;
   const siteId = `site-${user.id}`;
   const homeSiteRequired = needsHomeSite(role);
+  const { t } = useLocale();
+
+  useEffect(() => {
+    if (state.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifySaved() {
+      await Promise.resolve();
+      if (cancelled) return;
+      toast.add({
+        type: "success",
+        title: t("toast.userAccessSavedTitle"),
+        description: t("toast.userAccessSavedDescription"),
+      });
+    }
+
+    void notifySaved();
+    return () => {
+      cancelled = true;
+    };
+  }, [state.status, t]);
 
   function onRoleChange(value: UserRole | null): void {
     const nextRole = value ?? user.role;

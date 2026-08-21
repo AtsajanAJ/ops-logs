@@ -18,11 +18,13 @@ import {
   markSummaryReviewed,
   updateSummaryDraft,
 } from "@/app/actions/summaries";
+import { useLocale } from "@/components/locale-provider";
 import { SummaryDeleteDialog } from "@/components/summary-delete-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
 import {
   initialSummaryActionState,
   type SummaryView,
@@ -123,15 +125,54 @@ function SummaryCard({
     initialSummaryActionState,
   );
   const queryClient = useQueryClient();
+  const { t } = useLocale();
   const hasUnsavedChanges = draftText.trim() !== summary.summaryText;
 
   useEffect(() => {
-    if (saveState.status !== "success" && reviewState.status !== "success") {
-      return;
+    if (saveState.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifySaved() {
+      await Promise.resolve();
+      if (cancelled) return;
+      void queryClient.invalidateQueries({ queryKey: ["summaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
+      toast.add({
+        type: "success",
+        title: t("toast.summarySavedTitle"),
+        description: t("toast.summarySavedDescription"),
+      });
     }
-    void queryClient.invalidateQueries({ queryKey: ["summaries"] });
-    void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
-  }, [queryClient, reviewState.status, saveState.status]);
+
+    void notifySaved();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, saveState.status, t]);
+
+  useEffect(() => {
+    if (reviewState.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifyReviewed() {
+      await Promise.resolve();
+      if (cancelled) return;
+      void queryClient.invalidateQueries({ queryKey: ["summaries"] });
+      void queryClient.invalidateQueries({ queryKey: ["summary-draft-count"] });
+      toast.add({
+        type: "success",
+        title: t("toast.summaryReviewedTitle"),
+        description: t("toast.summaryReviewedDescription"),
+      });
+    }
+
+    void notifyReviewed();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, reviewState.status, t]);
 
   const feedback =
     reviewState.status !== "idle" ? reviewState : saveState;

@@ -5,6 +5,7 @@ import { LocaleProvider } from "@/components/locale-provider";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { QueryProvider } from "@/components/query-provider";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { Toaster } from "@/components/ui/toast";
 
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <LocaleProvider>
           <QueryProvider>{children}</QueryProvider>
+          <Toaster />
           <LocaleToggle />
           <ServiceWorkerRegister />
         </LocaleProvider>

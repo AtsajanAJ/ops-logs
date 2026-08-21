@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, PenLine, Plus, WandSparkles } from "lucide-react";
@@ -25,11 +25,15 @@ import {
   entryTypeValues,
   severityValues,
   type EntryTypeValue,
+  type IncidentActionState,
+  type IncidentFormValues,
 } from "@/lib/incidents";
 import { writableSitesFor } from "@/lib/permissions";
 import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 import { useLocale } from "@/components/locale-provider";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import type { SiteValue } from "@/lib/sites";
 
 function SubmitButton({
   disabled = false,
@@ -71,20 +75,32 @@ function FieldError({ message }: FieldErrorProps): React.JSX.Element | null {
   );
 }
 
-function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
-  const [state, formAction] = useActionState(
-    createIncident,
-    initialIncidentActionState,
+function resolveEntryType(value: string | undefined): EntryTypeValue {
+  return value === "SERVICE" ? "SERVICE" : "INCIDENT";
+}
+
+interface ManualFormFieldsProps {
+  idPrefix: string;
+  state: IncidentActionState;
+  formAction: (payload: FormData) => void;
+  values: IncidentFormValues;
+  writableSites: SiteValue[];
+  defaultSite: SiteValue;
+  siteLocked: boolean;
+}
+
+function ManualFormFields({
+  idPrefix,
+  state,
+  formAction,
+  values,
+  writableSites,
+  defaultSite,
+  siteLocked,
+}: ManualFormFieldsProps): React.JSX.Element {
+  const [entryType, setEntryType] = useState<EntryTypeValue>(
+    resolveEntryType(values.entryType),
   );
-  const formRef = useRef<HTMLFormElement>(null);
-  const queryClient = useQueryClient();
-  const { user } = useCurrentAuthUser();
-  const writableSites = user ? writableSitesFor(user) : [];
-  const defaultSite = writableSites[0] ?? "BANGKOK";
-  const siteLocked = writableSites.length === 1;
-  const [entryType, setEntryType] = useState<EntryTypeValue>("INCIDENT");
-  const [systemAreaKey, setSystemAreaKey] = useState(0);
-  const [imagesKey, setImagesKey] = useState(0);
   const [imagesUploading, setImagesUploading] = useState(false);
   const { t } = useLocale();
   const titleId = `${idPrefix}title`;
@@ -95,39 +111,18 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   const systemAreaId = `${idPrefix}system-area`;
   const descriptionId = `${idPrefix}description`;
   const tagsId = `${idPrefix}tags`;
-
-  useEffect(() => {
-    if (state.status !== "success") return;
-
-    let cancelled = false;
-
-    async function resetAfterSave() {
-      await Promise.resolve();
-      if (cancelled) return;
-      formRef.current?.reset();
-      setEntryType("INCIDENT");
-      setSystemAreaKey((key) => key + 1);
-      setImagesKey((key) => key + 1);
-      void queryClient.invalidateQueries({ queryKey: ["incidents"] });
-    }
-
-    void resetAfterSave();
-    return () => {
-      cancelled = true;
-    };
-  }, [queryClient, state]);
-
-  if (writableSites.length === 0) {
-    return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-        {t("form.readOnlyNotice")}
-      </div>
-    );
-  }
+  const siteDefault =
+    values.site && writableSites.includes(values.site as SiteValue)
+      ? (values.site as SiteValue)
+      : defaultSite;
+  const severityDefault =
+    values.severity &&
+    (severityValues as readonly string[]).includes(values.severity)
+      ? values.severity
+      : "LOW";
 
   return (
     <form
-      ref={formRef}
       action={formAction}
       className="grid gap-4"
       onKeyDown={(event) => {
@@ -152,6 +147,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         <Input
           id={titleId}
           name="title"
+          defaultValue={values.title}
           placeholder="VPN access failed after update"
           maxLength={120}
           autoFocus
@@ -213,7 +209,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
                 *
               </span>
             </Label>
-            <Select name="severity" defaultValue="LOW">
+            <Select name="severity" defaultValue={severityDefault}>
               <SelectTrigger
                 id={severityId}
                 className="h-11! w-full bg-white"
@@ -253,7 +249,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
               />
             </>
           ) : (
-            <Select name="site" defaultValue={defaultSite}>
+            <Select name="site" defaultValue={siteDefault}>
               <SelectTrigger
                 id={siteId}
                 className="h-11! w-full bg-white"
@@ -284,8 +280,8 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
           </span>
         </Label>
         <SystemAreaField
-          key={systemAreaKey}
           id={systemAreaId}
+          defaultValue={values.systemArea}
           invalid={Boolean(state.fieldErrors.systemArea)}
           selectPlaceholder={t("form.selectSystemArea")}
           customPlaceholder={t("form.systemAreaPlaceholder")}
@@ -305,6 +301,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         <Textarea
           id={descriptionId}
           name="description"
+          defaultValue={values.description}
           placeholder="Record the symptoms, impact, and what you tried."
           maxLength={2_000}
           rows={5}
@@ -325,6 +322,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         <Input
           id={tagsId}
           name="tags"
+          defaultValue={values.tags}
           placeholder="vpn, outage, timeout"
           maxLength={250}
           aria-invalid={Boolean(state.fieldErrors.tags)}
@@ -335,8 +333,8 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
       </div>
 
       <ImageUploadField
-        key={imagesKey}
         id={`${idPrefix}photos`}
+        defaultUrls={values.imageUrls}
         onUploadingChange={setImagesUploading}
       />
 
@@ -359,6 +357,72 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         <SubmitButton disabled={imagesUploading} />
       </div>
     </form>
+  );
+}
+
+function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
+  const [state, formAction] = useActionState(
+    createIncident,
+    initialIncidentActionState,
+  );
+  const queryClient = useQueryClient();
+  const { user } = useCurrentAuthUser();
+  const writableSites = user ? writableSitesFor(user) : [];
+  const defaultSite = writableSites[0] ?? "BANGKOK";
+  const siteLocked = writableSites.length === 1;
+  const { t } = useLocale();
+
+  useEffect(() => {
+    if (state.status !== "success") return;
+
+    let cancelled = false;
+
+    async function refreshAfterSave() {
+      await Promise.resolve();
+      if (cancelled) return;
+
+      void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+
+      toast.add({
+        type: "success",
+        title: t("form.savedTitle"),
+        description: t("form.savedDescription"),
+        actionProps: {
+          children: t("form.viewLedger"),
+          onClick() {
+            document
+              .getElementById("ops-ledger")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          },
+        },
+      });
+    }
+
+    void refreshAfterSave();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, state, t]);
+
+  if (writableSites.length === 0) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        {t("form.readOnlyNotice")}
+      </div>
+    );
+  }
+
+  return (
+    <ManualFormFields
+      key={state.formKey}
+      idPrefix={idPrefix}
+      state={state}
+      formAction={formAction}
+      values={state.values}
+      writableSites={writableSites}
+      defaultSite={defaultSite}
+      siteLocked={siteLocked}
+    />
   );
 }
 

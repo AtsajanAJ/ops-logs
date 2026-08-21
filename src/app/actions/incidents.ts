@@ -9,6 +9,7 @@ import {
 } from "@/lib/gemini";
 import { getDb } from "@/lib/db";
 import {
+  emptyIncidentFormValues,
   incidentDraftInputSchema,
   incidentInputSchema,
   parseImageUrls,
@@ -16,6 +17,7 @@ import {
   type IncidentActionState,
   type IncidentDraftActionState,
   type IncidentFieldName,
+  type IncidentFormValues,
   type IncidentLifecycleActionState,
 } from "@/lib/incidents";
 import {
@@ -43,6 +45,23 @@ function formValue(formData: FormData, key: IncidentFieldName): string {
   return typeof value === "string" ? value : "";
 }
 
+function readIncidentFormValues(formData: FormData): IncidentFormValues {
+  return {
+    title: formValue(formData, "title"),
+    description: formValue(formData, "description"),
+    severity: formValue(formData, "severity") || "LOW",
+    entryType: formValue(formData, "entryType") || "INCIDENT",
+    systemArea: formValue(formData, "systemArea"),
+    site: formValue(formData, "site"),
+    tags: formValue(formData, "tags"),
+    imageUrls: parseImageUrls(formData.getAll("imageUrls")),
+  };
+}
+
+function nextFormKey(previousState: IncidentActionState): number {
+  return previousState.formKey + 1;
+}
+
 async function requireWritableSite(
   site: Site,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
@@ -63,27 +82,32 @@ async function requireWritableSite(
 }
 
 export async function createIncident(
-  _previousState: IncidentActionState,
+  previousState: IncidentActionState,
   formData: FormData,
 ): Promise<IncidentActionState> {
+  const values = readIncidentFormValues(formData);
+  const formKey = nextFormKey(previousState);
+
   const user = await getCurrentUser();
   if (!user) {
     return {
       status: "error",
       message: "Sign in to continue.",
       fieldErrors: {},
+      values,
+      formKey,
     };
   }
 
   const parsed = incidentInputSchema.safeParse({
-    title: formValue(formData, "title"),
-    description: formValue(formData, "description"),
-    severity: formValue(formData, "severity"),
-    entryType: formValue(formData, "entryType"),
-    systemArea: formValue(formData, "systemArea"),
-    site: formValue(formData, "site"),
-    tags: formValue(formData, "tags"),
-    imageUrls: parseImageUrls(formData.getAll("imageUrls")),
+    title: values.title,
+    description: values.description,
+    severity: values.severity,
+    entryType: values.entryType,
+    systemArea: values.systemArea,
+    site: values.site,
+    tags: values.tags,
+    imageUrls: values.imageUrls,
   });
 
   if (!parsed.success) {
@@ -99,6 +123,8 @@ export async function createIncident(
       status: "error",
       message: "Check the highlighted fields and try again.",
       fieldErrors,
+      values,
+      formKey,
     };
   }
 
@@ -110,6 +136,8 @@ export async function createIncident(
           ? "Visitors are read-only. Ask an admin to grant Member access."
           : "You can only log incidents for your home site.",
       fieldErrors: {},
+      values,
+      formKey,
     };
   }
 
@@ -126,6 +154,8 @@ export async function createIncident(
       status: "success",
       message: "Incident logged.",
       fieldErrors: {},
+      values: emptyIncidentFormValues,
+      formKey,
     };
   } catch (error: unknown) {
     console.error("Failed to create incident", error);
@@ -135,6 +165,8 @@ export async function createIncident(
       message:
         "The incident could not be saved. Check the database connection and try again.",
       fieldErrors: {},
+      values,
+      formKey,
     };
   }
 }

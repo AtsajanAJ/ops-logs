@@ -131,10 +131,25 @@ export function parseImageUrls(values: unknown): string[] {
   ].slice(0, MAX_INCIDENT_IMAGES);
 }
 
+export interface IncidentFormValues {
+  title: string;
+  description: string;
+  severity: string;
+  entryType: string;
+  systemArea: string;
+  site: string;
+  tags: string;
+  imageUrls: string[];
+}
+
 export interface IncidentActionState {
   status: "idle" | "success" | "error";
   message: string;
   fieldErrors: Partial<Record<IncidentFieldName, string>>;
+  /** Submitted values echoed back so the form can restore after an error. */
+  values: IncidentFormValues;
+  /** Bumped after each action so uncontrolled fields remount with `values`. */
+  formKey: number;
 }
 
 export interface IncidentLifecycleActionState {
@@ -142,10 +157,23 @@ export interface IncidentLifecycleActionState {
   message: string;
 }
 
+export const emptyIncidentFormValues: IncidentFormValues = {
+  title: "",
+  description: "",
+  severity: "LOW",
+  entryType: "INCIDENT",
+  systemArea: "",
+  site: "",
+  tags: "",
+  imageUrls: [],
+};
+
 export const initialIncidentActionState: IncidentActionState = {
   status: "idle",
   message: "",
   fieldErrors: {},
+  values: emptyIncidentFormValues,
+  formKey: 0,
 };
 
 export const initialIncidentLifecycleState: IncidentLifecycleActionState = {

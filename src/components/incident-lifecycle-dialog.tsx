@@ -9,6 +9,7 @@ import {
   reopenIncident,
   resolveIncident,
 } from "@/app/actions/incidents";
+import { useLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
 import {
   initialIncidentLifecycleState,
   type IncidentView,
@@ -72,17 +74,53 @@ export function IncidentLifecycleDialog({
     initialIncidentLifecycleState,
   );
   const queryClient = useQueryClient();
+  const { t } = useLocale();
 
   useEffect(() => {
-    if (
-      resolveState.status !== "success" &&
-      reopenState.status !== "success"
-    ) {
-      return;
+    if (resolveState.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifyResolved() {
+      await Promise.resolve();
+      if (cancelled) return;
+      void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.add({
+        type: "success",
+        title: t("toast.incidentResolvedTitle"),
+        description: t("toast.incidentResolvedDescription"),
+      });
     }
-    void queryClient.invalidateQueries({ queryKey: ["incidents"] });
-    void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-  }, [queryClient, reopenState.status, resolveState.status]);
+
+    void notifyResolved();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, resolveState.status, t]);
+
+  useEffect(() => {
+    if (reopenState.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifyReopened() {
+      await Promise.resolve();
+      if (cancelled) return;
+      void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.add({
+        type: "success",
+        title: t("toast.incidentReopenedTitle"),
+        description: t("toast.incidentReopenedDescription"),
+      });
+    }
+
+    void notifyReopened();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, reopenState.status, t]);
 
   const state = reopenState.status !== "idle" ? reopenState : resolveState;
 

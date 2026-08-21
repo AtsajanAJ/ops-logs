@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, Trash2 } from "lucide-react";
 
 import { deleteIncident } from "@/app/actions/incidents";
+import { useLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toast";
 import {
   initialIncidentLifecycleState,
   type IncidentView,
@@ -55,15 +57,31 @@ export function IncidentDeleteDialog({
     initialIncidentLifecycleState,
   );
   const queryClient = useQueryClient();
+  const { t } = useLocale();
 
   useEffect(() => {
-    if (state.status !== "success") {
-      return;
+    if (state.status !== "success") return;
+
+    let cancelled = false;
+
+    async function notifyDeleted() {
+      await Promise.resolve();
+      if (cancelled) return;
+      void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["incident-facets"] });
+      toast.add({
+        type: "success",
+        title: t("toast.incidentDeletedTitle"),
+        description: t("toast.incidentDeletedDescription"),
+      });
     }
-    void queryClient.invalidateQueries({ queryKey: ["incidents"] });
-    void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    void queryClient.invalidateQueries({ queryKey: ["incident-facets"] });
-  }, [queryClient, state.status]);
+
+    void notifyDeleted();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, state.status, t]);
 
   return (
     <Dialog>

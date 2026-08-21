@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { SystemAreaField } from "@/components/system-area-field";
+import { toast } from "@/components/ui/toast";
+import { useLocale } from "@/components/locale-provider";
 import {
   initialIncidentActionState,
   initialIncidentDraftState,
@@ -121,7 +123,26 @@ function AiDraftForm({
   onStartOver,
   saveFormRef,
 }: AiDraftFormProps): React.JSX.Element {
-  const [entryType, setEntryType] = useState<EntryTypeValue>(initialEntryType);
+  const restored =
+    saveState.status === "error" ? saveState.values : null;
+  const title = restored?.title || draft.title;
+  const description = restored?.description || draft.description;
+  const tags = restored?.tags || draft.tags.join(", ");
+  const systemArea = restored?.systemArea || draft.systemArea || "";
+  const severityDefault =
+    restored?.severity &&
+    (severityValues as readonly string[]).includes(restored.severity)
+      ? restored.severity
+      : draft.severity;
+  const siteDefault =
+    restored?.site && writableSites.includes(restored.site as SiteValue)
+      ? (restored.site as SiteValue)
+      : draftSite;
+  const [entryType, setEntryType] = useState<EntryTypeValue>(
+    restored?.entryType === "SERVICE" || restored?.entryType === "INCIDENT"
+      ? restored.entryType
+      : initialEntryType,
+  );
   const [imagesUploading, setImagesUploading] = useState(false);
 
   return (
@@ -132,13 +153,22 @@ function AiDraftForm({
         </p>
       </div>
 
-      <form ref={saveFormRef} action={saveAction} className="grid gap-4">
+      <form
+        key={
+          saveState.status === "error"
+            ? `error-${saveState.formKey}`
+            : "draft"
+        }
+        ref={saveFormRef}
+        action={saveAction}
+        className="grid gap-4"
+      >
         <div className="grid gap-2">
           <Label htmlFor={`${idPrefix}draft-title`}>Title</Label>
           <Input
             id={`${idPrefix}draft-title`}
             name="title"
-            defaultValue={draft.title}
+            defaultValue={title}
             maxLength={120}
             required
             className="h-11 bg-white"
@@ -184,7 +214,7 @@ function AiDraftForm({
           {entryType === "INCIDENT" && (
             <div className="grid gap-2">
               <Label htmlFor={`${idPrefix}draft-severity`}>Severity</Label>
-              <Select name="severity" defaultValue={draft.severity}>
+              <Select name="severity" defaultValue={severityDefault}>
                 <SelectTrigger
                   id={`${idPrefix}draft-severity`}
                   className="h-11! w-full bg-white"
@@ -220,7 +250,7 @@ function AiDraftForm({
                 />
               </>
             ) : (
-              <Select name="site" defaultValue={draftSite}>
+              <Select name="site" defaultValue={siteDefault}>
                 <SelectTrigger
                   id={`${idPrefix}draft-site`}
                   className="h-11! w-full bg-white"
@@ -248,7 +278,7 @@ function AiDraftForm({
           <Label htmlFor={`${idPrefix}draft-area`}>System area</Label>
           <SystemAreaField
             id={`${idPrefix}draft-area`}
-            defaultValue={draft.systemArea}
+            defaultValue={systemArea}
             selectPlaceholder="Select system area"
             customPlaceholder="Type a custom system…"
             addLabel="Add custom system"
@@ -261,7 +291,7 @@ function AiDraftForm({
           <Textarea
             id={`${idPrefix}draft-desc`}
             name="description"
-            defaultValue={draft.description}
+            defaultValue={description}
             maxLength={2_000}
             rows={5}
             required
@@ -274,7 +304,7 @@ function AiDraftForm({
           <Input
             id={`${idPrefix}draft-tags`}
             name="tags"
-            defaultValue={draft.tags.join(", ")}
+            defaultValue={tags}
             maxLength={250}
             className="h-11 bg-white"
           />
@@ -287,6 +317,7 @@ function AiDraftForm({
 
         <ImageUploadField
           id={`${idPrefix}draft-photos`}
+          defaultUrls={restored?.imageUrls ?? []}
           onUploadingChange={setImagesUploading}
         />
 
@@ -344,6 +375,7 @@ export function IncidentAiForm({
   const saveFormRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
   const { user } = useCurrentAuthUser();
+  const { t } = useLocale();
   const writableSites = user ? writableSitesFor(user) : [];
   const defaultSite = writableSites[0] ?? "BANGKOK";
   const siteLocked = writableSites.length === 1;
@@ -377,13 +409,27 @@ export function IncidentAiForm({
       setConfirmed(false);
       if (notesRef.current) notesRef.current.value = "";
       void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+
+      toast.add({
+        type: "success",
+        title: t("form.savedTitle"),
+        description: t("form.savedDescription"),
+        actionProps: {
+          children: t("form.viewLedger"),
+          onClick() {
+            document
+              .getElementById("ops-ledger")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          },
+        },
+      });
     }
 
     void resetAfterSave();
     return () => {
       cancelled = true;
     };
-  }, [queryClient, saveState]);
+  }, [queryClient, saveState, t]);
 
   function handleStartOver(): void {
     setDraft(null);

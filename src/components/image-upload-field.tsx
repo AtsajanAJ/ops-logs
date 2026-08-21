@@ -51,7 +51,27 @@ interface PendingImage {
 interface ImageUploadFieldProps {
   id?: string;
   name?: string;
+  defaultUrls?: string[];
   onUploadingChange?: (uploading: boolean) => void;
+}
+
+function fileNameFromUrl(url: string): string {
+  try {
+    const path = new URL(url).pathname;
+    const segment = path.split("/").pop();
+    return segment && segment.length > 0 ? segment : "image";
+  } catch {
+    return "image";
+  }
+}
+
+function toDoneImages(urls: string[]): DoneImage[] {
+  return urls.map((url) => ({
+    id: crypto.randomUUID(),
+    url,
+    name: fileNameFromUrl(url),
+    meta: "",
+  }));
 }
 
 function formatFileMeta(file: File): string {
@@ -133,6 +153,7 @@ function uploadToCloudinary(
 export function ImageUploadField({
   id,
   name = "imageUrls",
+  defaultUrls = [],
   onUploadingChange,
 }: ImageUploadFieldProps): React.JSX.Element | null {
   const generatedId = useId();
@@ -140,7 +161,9 @@ export function ImageUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useLocale();
   const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [images, setImages] = useState<DoneImage[]>([]);
+  const [images, setImages] = useState<DoneImage[]>(() =>
+    toDoneImages(defaultUrls),
+  );
   const [pending, setPending] = useState<PendingImage[]>([]);
   const [error, setError] = useState("");
 
