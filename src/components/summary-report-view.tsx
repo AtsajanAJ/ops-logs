@@ -21,10 +21,6 @@ import {
   type SummaryView,
 } from "@/lib/summaries";
 
-const dateFormatter = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-});
-
 function PendingButton({
   kind,
   disabled = false,
@@ -33,6 +29,7 @@ function PendingButton({
   disabled?: boolean;
 }): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
   const isSave = kind === "save";
 
   return (
@@ -54,7 +51,11 @@ function PendingButton({
       ) : (
         <Check aria-hidden="true" />
       )}
-      {pending ? "Working…" : isSave ? "Save changes" : "Mark reviewed"}
+      {pending
+        ? t("summaries.working")
+        : isSave
+          ? t("summaries.saveChanges")
+          : t("summaries.markReviewed")}
     </Button>
   );
 }
@@ -77,11 +78,19 @@ export function SummaryReportView({
     markSummaryReviewed,
     initialSummaryActionState,
   );
+  const { locale, t } = useLocale();
+  const dateFormatter = new Intl.DateTimeFormat(
+    locale === "th" ? "th-TH" : "en",
+    { dateStyle: "medium" },
+  );
   const hasUnsavedChanges = draftText.trim() !== summary.summaryText;
   const rangeLabel = `${dateFormatter.format(new Date(summary.weekStart))} – ${dateFormatter.format(new Date(summary.weekEnd))}`;
   const feedback =
     reviewState.status !== "idle" ? reviewState : saveState;
-  const { t } = useLocale();
+  const incidentCountKey =
+    summary.incidentIds.length === 1
+      ? "summaries.incidentCount"
+      : "summaries.incidentCountPlural";
 
   useEffect(() => {
     if (saveState.status !== "success") return;
@@ -146,13 +155,14 @@ export function SummaryReportView({
                 : "border-amber-300 bg-amber-50 text-amber-800"
             }
           >
-            {summary.reviewed ? "Reviewed" : "Draft"}
+            {summary.reviewed ? t("summaries.reviewed") : t("summaries.draft")}
           </Badge>
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          {summary.incidentIds.length} incident
-          {summary.incidentIds.length === 1 ? "" : "s"} · Generated{" "}
-          {dateFormatter.format(new Date(summary.createdAt))}
+          {t(incidentCountKey, { count: summary.incidentIds.length })} ·{" "}
+          {t("summaries.generatedOn", {
+            date: dateFormatter.format(new Date(summary.createdAt)),
+          })}
         </p>
       </header>
 
@@ -167,7 +177,7 @@ export function SummaryReportView({
               <input type="hidden" name="id" value={summary.id} />
               <Textarea
                 name="summaryText"
-                aria-label="Report draft"
+                aria-label={t("summaries.reportDraftAria")}
                 value={draftText}
                 onChange={(event) => setDraftText(event.target.value)}
                 rows={20}
@@ -188,8 +198,8 @@ export function SummaryReportView({
                 }
               >
                 {hasUnsavedChanges
-                  ? "Unsaved changes — save before marking reviewed."
-                  : "All changes saved. This draft is ready for final review."}
+                  ? t("summaries.unsavedChanges")
+                  : t("summaries.allSaved")}
               </p>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <SummaryDeleteDialog

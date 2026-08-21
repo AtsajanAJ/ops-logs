@@ -8,6 +8,7 @@ import {
 } from "@/components/summary-generator";
 import { SummaryList } from "@/components/summary-list";
 import { SectionHeading } from "@/components/page-heading";
+import { useLocale } from "@/components/locale-provider";
 
 interface SummaryWorkspaceProps {
   defaultRange: DateRange;
@@ -17,13 +18,14 @@ export function SummaryWorkspace({
   defaultRange,
 }: SummaryWorkspaceProps): React.JSX.Element {
   const [activeRange, setActiveRange] = useState(defaultRange);
+  const { t } = useLocale();
 
   return (
     <div className="grid gap-12">
-      <section aria-label="Prepare safe report data">
+      <section aria-label={t("summaries.prepareSectionAria")}>
         <SectionHeading
-          title="Prepare safe data"
-          description="Choose a week and verify every field before anything is sent to Gemini."
+          title={t("summaries.prepareSectionTitle")}
+          description={t("summaries.prepareSectionDescription")}
           className="mb-5"
         />
         <SummaryGenerator
@@ -32,10 +34,10 @@ export function SummaryWorkspace({
         />
       </section>
 
-      <section aria-label="Review report drafts">
+      <section aria-label={t("summaries.reviewSectionAria")}>
         <SectionHeading
-          title="Review drafts"
-          description="Edit generated reports, save changes, and mark the final version as reviewed."
+          title={t("summaries.reviewSectionTitle")}
+          description={t("summaries.reviewSectionDescription")}
           className="mb-5"
         />
         <SummaryList range={activeRange} />

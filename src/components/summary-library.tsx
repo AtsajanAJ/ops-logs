@@ -10,6 +10,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 
+import { useLocale } from "@/components/locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,11 +18,9 @@ import { SummaryDeleteDialog } from "@/components/summary-delete-dialog";
 import type { SummaryView } from "@/lib/summaries";
 import { cn } from "@/lib/utils";
 
-const dateFormatter = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-});
-
-async function fetchAllSummaries(): Promise<SummaryView[]> {
+async function fetchAllSummaries(
+  fallbackMessage: string,
+): Promise<SummaryView[]> {
   const response = await fetch("/api/summaries");
   const payload: unknown = await response.json();
 
@@ -32,7 +31,7 @@ async function fetchAllSummaries(): Promise<SummaryView[]> {
       "message" in payload &&
       typeof payload.message === "string"
         ? payload.message
-        : "Weekly reports could not be loaded.";
+        : fallbackMessage;
     throw new Error(message);
   }
 
@@ -40,8 +39,10 @@ async function fetchAllSummaries(): Promise<SummaryView[]> {
 }
 
 function LibrarySkeleton(): React.JSX.Element {
+  const { t } = useLocale();
+
   return (
-    <div className="space-y-3" aria-label="Loading weekly reports">
+    <div className="space-y-3" aria-label={t("summaries.loadingReports")}>
       <Skeleton className="h-20 w-full rounded-xl" />
       <Skeleton className="h-20 w-full rounded-xl" />
       <Skeleton className="h-20 w-full rounded-xl" />
@@ -50,9 +51,15 @@ function LibrarySkeleton(): React.JSX.Element {
 }
 
 export function SummaryLibrary(): React.JSX.Element {
+  const { locale, t } = useLocale();
+  const dateFormatter = new Intl.DateTimeFormat(
+    locale === "th" ? "th-TH" : "en",
+    { dateStyle: "medium" },
+  );
+  const loadReportsFailed = t("summaries.loadReportsFailed");
   const summariesQuery = useQuery({
     queryKey: ["summaries", "library"],
-    queryFn: fetchAllSummaries,
+    queryFn: () => fetchAllSummaries(loadReportsFailed),
   });
 
   if (summariesQuery.isPending) {
@@ -71,7 +78,7 @@ export function SummaryLibrary(): React.JSX.Element {
           className="mt-4 border-red-300 bg-white"
         >
           <RefreshCw aria-hidden="true" />
-          Try again
+          {t("summaries.tryAgain")}
         </Button>
       </div>
     );
@@ -81,16 +88,18 @@ export function SummaryLibrary(): React.JSX.Element {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white/60 p-8 text-center">
         <FileText className="mx-auto size-6 text-slate-400" />
-        <h3 className="mt-3 font-semibold text-slate-900">No saved reports yet</h3>
+        <h3 className="mt-3 font-semibold text-slate-900">
+          {t("summaries.noReportsTitle")}
+        </h3>
         <p className="mt-1 text-sm text-slate-500">
-          Generate a draft from Prepare, then it will appear here.
+          {t("summaries.noReportsDescription")}
         </p>
         <Link
           href="/summaries"
           className={cn(buttonVariants(), "mt-5 inline-flex h-11")}
         >
           <WandSparkles aria-hidden="true" />
-          Go to Prepare
+          {t("summaries.goToPrepare")}
         </Link>
       </div>
     );
@@ -100,6 +109,10 @@ export function SummaryLibrary(): React.JSX.Element {
     <div className="grid gap-3">
       {summariesQuery.data.map((summary) => {
         const rangeLabel = `${dateFormatter.format(new Date(summary.weekStart))} – ${dateFormatter.format(new Date(summary.weekEnd))}`;
+        const incidentCountKey =
+          summary.incidentIds.length === 1
+            ? "summaries.incidentCount"
+            : "summaries.incidentCountPlural";
 
         return (
           <article
@@ -117,13 +130,16 @@ export function SummaryLibrary(): React.JSX.Element {
                       : "border-amber-300 bg-amber-50 text-amber-800"
                   }
                 >
-                  {summary.reviewed ? "Reviewed" : "Draft"}
+                  {summary.reviewed
+                    ? t("summaries.reviewed")
+                    : t("summaries.draft")}
                 </Badge>
               </div>
               <p className="mt-1 text-xs text-slate-500">
-                {summary.incidentIds.length} incident
-                {summary.incidentIds.length === 1 ? "" : "s"} · Generated{" "}
-                {dateFormatter.format(new Date(summary.createdAt))}
+                {t(incidentCountKey, { count: summary.incidentIds.length })} ·{" "}
+                {t("summaries.generatedOn", {
+                  date: dateFormatter.format(new Date(summary.createdAt)),
+                })}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -138,7 +154,7 @@ export function SummaryLibrary(): React.JSX.Element {
                 )}
               >
                 <ExternalLink aria-hidden="true" className="size-3.5" />
-                Open
+                {t("summaries.open")}
               </Link>
             </div>
           </article>
@@ -147,7 +163,7 @@ export function SummaryLibrary(): React.JSX.Element {
       {summariesQuery.isFetching && (
         <p className="flex items-center justify-center gap-2 text-xs text-slate-500">
           <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
-          Refreshing…
+          {t("summaries.refreshing")}
         </p>
       )}
     </div>

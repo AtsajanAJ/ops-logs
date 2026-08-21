@@ -24,12 +24,9 @@ import {
   type SummaryView,
 } from "@/lib/summaries";
 
-const dateFormatter = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-});
-
 function DeleteSubmitButton(): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
 
   return (
     <Button
@@ -44,7 +41,7 @@ function DeleteSubmitButton(): React.JSX.Element {
       ) : (
         <Trash2 aria-hidden="true" />
       )}
-      {pending ? "Deleting…" : "Delete draft"}
+      {pending ? t("summaries.deleting") : t("summaries.deleteDraft")}
     </Button>
   );
 }
@@ -63,7 +60,11 @@ export function SummaryDeleteDialog({
     initialSummaryActionState,
   );
   const queryClient = useQueryClient();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
+  const dateFormatter = new Intl.DateTimeFormat(
+    locale === "th" ? "th-TH" : "en",
+    { dateStyle: "medium" },
+  );
   const onSuccessRef = useRef(onSuccess);
   const rangeLabel = `${dateFormatter.format(new Date(summary.weekStart))} – ${dateFormatter.format(new Date(summary.weekEnd))}`;
 
@@ -104,20 +105,20 @@ export function SummaryDeleteDialog({
             size="sm"
             variant="ghost"
             className="h-11 px-3 text-slate-500 hover:bg-red-50 hover:text-red-700 sm:h-9"
-            aria-label={`Delete draft report for ${rangeLabel}`}
+            aria-label={`${t("summaries.deleteDraft")} ${rangeLabel}`}
           />
         }
       >
         <Trash2 aria-hidden="true" />
-        Delete
+        {t("summaries.deleteDraft")}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Delete draft report?</DialogTitle>
+          <DialogTitle>{t("summaries.deleteDraftTitle")}</DialogTitle>
           <DialogDescription>
-            This permanently removes the draft for{" "}
-            <span className="font-medium text-slate-700">{rangeLabel}</span>.
-            This cannot be undone.
+            {t("summaries.deleteDraftDescriptionPrefix")}{" "}
+            <span className="font-medium text-slate-700">{rangeLabel}</span>.{" "}
+            {t("summaries.deleteDraftDescriptionSuffix")}
           </DialogDescription>
         </DialogHeader>
 
@@ -127,7 +128,7 @@ export function SummaryDeleteDialog({
             <DialogClose
               render={<Button type="button" variant="outline" size="sm" />}
             >
-              Cancel
+              {t("summaries.cancel")}
             </DialogClose>
             <DeleteSubmitButton />
           </DialogFooter>

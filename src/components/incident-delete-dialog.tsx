@@ -26,6 +26,7 @@ import {
 
 function DeleteSubmitButton(): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
 
   return (
     <Button
@@ -40,7 +41,7 @@ function DeleteSubmitButton(): React.JSX.Element {
       ) : (
         <Trash2 aria-hidden="true" />
       )}
-      {pending ? "Deleting…" : "Delete incident"}
+      {pending ? t("lifecycle.deleting") : t("lifecycle.deleteIncident")}
     </Button>
   );
 }
@@ -92,20 +93,20 @@ export function IncidentDeleteDialog({
             size="xs"
             variant="ghost"
             className="h-11 px-3 text-slate-500 hover:bg-red-50 hover:text-red-700 sm:h-8"
-            aria-label={`Delete incident: ${incident.title}`}
+            aria-label={t("lifecycle.deleteAria", { title: incident.title })}
           />
         }
       >
         <Trash2 aria-hidden="true" className="size-3.5" />
-        <span className="sm:sr-only">Delete</span>
+        <span className="sm:sr-only">{t("lifecycle.deleteIncident")}</span>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Delete incident?</DialogTitle>
+          <DialogTitle>{t("lifecycle.deleteTitle")}</DialogTitle>
           <DialogDescription>
-            This permanently removes{" "}
+            {t("lifecycle.deleteDescriptionPrefix")}{" "}
             <span className="font-medium text-slate-700">{incident.title}</span>{" "}
-            from the log. This cannot be undone.
+            {t("lifecycle.deleteDescriptionSuffix")}
           </DialogDescription>
         </DialogHeader>
 
@@ -115,7 +116,7 @@ export function IncidentDeleteDialog({
             <DialogClose
               render={<Button type="button" variant="outline" size="sm" />}
             >
-              Cancel
+              {t("lifecycle.cancel")}
             </DialogClose>
             <DeleteSubmitButton />
           </DialogFooter>

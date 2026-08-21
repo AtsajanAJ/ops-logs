@@ -22,9 +22,11 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
       <div className="mb-6 flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
         <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
         <div>
-          <p className="font-semibold">Exports contain sensitive operational data</p>
+          <p className="font-semibold">
+            <T k="settingsUi.exportWarningTitle" />
+          </p>
           <p className="mt-0.5 text-amber-900">
-            Store downloaded files securely and never upload them to public services.
+            <T k="settingsUi.exportWarningBody" />
           </p>
         </div>
       </div>
@@ -39,18 +41,17 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
               />
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-semibold text-slate-950">
-                  User access
+                  <T k="settingsUi.userAccessTitle" />
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Assign Visitor, Member, site Admin, or Super Admin roles for
-                  the operations team.
+                  <T k="settingsUi.userAccessBody" />
                 </p>
                 <div className="mt-5">
                   <a
                     href="/settings/users"
                     className={cn(buttonVariants(), "h-11")}
                   >
-                    Manage users
+                    <T k="settingsUi.manageUsers" />
                   </a>
                 </div>
               </div>
@@ -66,11 +67,10 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
             />
             <div className="min-w-0 flex-1">
               <h2 className="text-lg font-semibold text-slate-950">
-                Data export
+                <T k="settingsUi.dataExportTitle" />
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Use the complete JSON archive for recovery. Download CSV when
-                you only need incident records in a spreadsheet.
+                <T k="settingsUi.dataExportBody" />
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <a
@@ -78,14 +78,14 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
                   download
                   className={cn(buttonVariants(), "h-11")}
                 >
-                  Download complete JSON
+                  <T k="settingsUi.downloadJson" />
                 </a>
                 <a
                   href="/api/export/incidents"
                   download
                   className={cn(buttonVariants({ variant: "outline" }), "h-11")}
                 >
-                  Download incident CSV
+                  <T k="settingsUi.downloadCsv" />
                 </a>
               </div>
             </div>
@@ -100,12 +100,10 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
             />
             <div>
               <h2 className="text-lg font-semibold text-slate-950">
-                Neon recovery
+                <T k="settingsUi.neonTitle" />
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Point-in-time restore retention depends on your Neon plan and
-                project settings. Verify the current retention window in the
-                Neon console before relying on it as your only backup.
+                <T k="settingsUi.neonBody" />
               </p>
             </div>
           </div>
@@ -119,15 +117,10 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
             />
             <div>
               <h2 className="text-lg font-semibold text-slate-950">
-                Credentials
+                <T k="settingsUi.credentialsTitle" />
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Keep{" "}
-                <code className="rounded bg-slate-100 px-1">DATABASE_URL</code>{" "}
-                and{" "}
-                <code className="rounded bg-slate-100 px-1">GEMINI_API_KEY</code>{" "}
-                only in <code className="rounded bg-slate-100 px-1">.env</code>.
-                Restart the development server after rotating either value.
+                <T k="settingsUi.credentialsBody" />
               </p>
             </div>
           </div>

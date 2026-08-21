@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { generateSummaryDraft } from "@/app/actions/summaries";
+import { useLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -34,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { entryTypeLabels, type IncidentView, parseTags } from "@/lib/incidents";
+import { type IncidentView, parseTags } from "@/lib/incidents";
 import {
   createSafeIncident,
   initialSummaryActionState,
@@ -52,7 +53,10 @@ interface SummaryGeneratorProps {
   onRangePrepared: (range: DateRange) => void;
 }
 
-async function fetchRangeIncidents(range: DateRange): Promise<IncidentView[]> {
+async function fetchRangeIncidents(
+  range: DateRange,
+  fallbackMessage: string,
+): Promise<IncidentView[]> {
   const params = new URLSearchParams({
     start: range.weekStart,
     end: range.weekEnd,
@@ -67,7 +71,7 @@ async function fetchRangeIncidents(range: DateRange): Promise<IncidentView[]> {
       "message" in payload &&
       typeof payload.message === "string"
         ? payload.message
-        : "Ops entries could not be loaded.";
+        : fallbackMessage;
     throw new Error(message);
   }
 
@@ -82,12 +86,13 @@ function GenerateButton({
   confirmed,
 }: GenerateButtonProps): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
 
   return (
     <div className="flex flex-col items-stretch gap-2 sm:items-end">
       {pending && (
         <p className="text-xs font-medium text-orange-700" role="status">
-          Gemini is preparing the report. This can take a moment.
+          {t("summaries.generatingHint")}
         </p>
       )}
       <Button
@@ -102,7 +107,7 @@ function GenerateButton({
         ) : (
           <WandSparkles aria-hidden="true" />
         )}
-        {pending ? "Generating with Gemini…" : "Generate draft"}
+        {pending ? t("summaries.generating") : t("summaries.generateDraft")}
       </Button>
     </div>
   );
@@ -117,6 +122,7 @@ function PrivacyEditor({
   range,
   sourceIncidents,
 }: PrivacyEditorProps): React.JSX.Element {
+  const { t } = useLocale();
   const [incidents, setIncidents] = useState<SafeIncident[]>(() =>
     sourceIncidents.map(createSafeIncident),
   );
@@ -174,10 +180,10 @@ function PrivacyEditor({
       <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 p-8 text-center">
         <CalendarRange className="mx-auto size-6 text-slate-400" />
         <h3 className="mt-3 font-semibold text-slate-900">
-          No entries in this range
+          {t("summaries.emptyRangeTitle")}
         </h3>
         <p className="mt-1 text-sm text-slate-500">
-          Choose dates containing at least one incident or service.
+          {t("summaries.emptyRangeDescription")}
         </p>
       </div>
     );
@@ -198,10 +204,11 @@ function PrivacyEditor({
         <div className="flex gap-3">
           <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
           <div>
-            <h3 className="text-sm font-semibold">Check every identifier</h3>
+            <h3 className="text-sm font-semibold">
+              {t("summaries.checkIdentifiersTitle")}
+            </h3>
             <p className="mt-1 text-sm leading-6 text-amber-900">
-              Automatic masking is only a first pass. Replace real patient,
-              hospital, client, and person names with labels such as Site A.
+              {t("summaries.checkIdentifiersBody")}
             </p>
           </div>
         </div>
@@ -214,7 +221,11 @@ function PrivacyEditor({
             className="border-0"
           >
             <legend className="sr-only">
-              Entry {index + 1} of {incidents.length}: {incident.title}
+              {t("summaries.entryLegend", {
+                index: index + 1,
+                total: incidents.length,
+                title: incident.title,
+              })}
             </legend>
 
             <button
@@ -234,11 +245,11 @@ function PrivacyEditor({
                 </span>
                 <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
-                    {entryTypeLabels[incident.entryType]}
+                    {t(`entryType.${incident.entryType}`)}
                   </span>
                   {incident.entryType === "INCIDENT" && (
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
-                      {incident.severity.toLowerCase()}
+                      {t(`severity.${incident.severity}`)}
                     </span>
                   )}
                   {incident.systemArea && <span>{incident.systemArea}</span>}
@@ -258,7 +269,9 @@ function PrivacyEditor({
               className="grid gap-4 border-t border-slate-200 bg-slate-50/40 p-4 sm:p-5"
             >
               <div className="grid gap-2">
-              <Label htmlFor={`safe-title-${incident.id}`}>Safe title</Label>
+              <Label htmlFor={`safe-title-${incident.id}`}>
+                {t("summaries.safeTitle")}
+              </Label>
               <Input
                 id={`safe-title-${incident.id}`}
                 value={incident.title}
@@ -271,13 +284,13 @@ function PrivacyEditor({
 
             <div className="grid gap-2">
               <Label htmlFor={`safe-area-${incident.id}`}>
-                Safe system area
+                {t("summaries.safeSystemArea")}
               </Label>
               <Input
                 id={`safe-area-${incident.id}`}
                 value={incident.systemArea ?? ""}
                 maxLength={80}
-                placeholder="Site A / Network"
+                placeholder={t("summaries.safeSystemAreaPlaceholder")}
                 onChange={(event) =>
                   updateIncident(index, "systemArea", event.target.value)
                 }
@@ -286,7 +299,7 @@ function PrivacyEditor({
 
             <div className="grid gap-2">
               <Label htmlFor={`safe-description-${incident.id}`}>
-                Safe description
+                {t("summaries.safeDescription")}
               </Label>
               <Textarea
                 id={`safe-description-${incident.id}`}
@@ -300,7 +313,9 @@ function PrivacyEditor({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor={`safe-tags-${incident.id}`}>Safe tags</Label>
+              <Label htmlFor={`safe-tags-${incident.id}`}>
+                {t("summaries.safeTags")}
+              </Label>
               <Input
                 id={`safe-tags-${incident.id}`}
                 value={incident.tags.join(", ")}
@@ -314,14 +329,14 @@ function PrivacyEditor({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor={`safe-root-cause-${incident.id}`}>
-                  Safe root cause
+                  {t("summaries.safeRootCause")}
                 </Label>
                 <Textarea
                   id={`safe-root-cause-${incident.id}`}
                   value={incident.rootCause ?? ""}
                   maxLength={2_000}
                   rows={3}
-                  placeholder="Not yet determined"
+                  placeholder={t("summaries.notYetDetermined")}
                   onChange={(event) =>
                     updateIncident(index, "rootCause", event.target.value)
                   }
@@ -329,14 +344,14 @@ function PrivacyEditor({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor={`safe-resolution-${incident.id}`}>
-                  Safe resolution
+                  {t("summaries.safeResolution")}
                 </Label>
                 <Textarea
                   id={`safe-resolution-${incident.id}`}
                   value={incident.resolution ?? ""}
                   maxLength={2_000}
                   rows={3}
-                  placeholder="Not yet determined"
+                  placeholder={t("summaries.notYetDetermined")}
                   onChange={(event) =>
                     updateIncident(index, "resolution", event.target.value)
                   }
@@ -360,9 +375,7 @@ function PrivacyEditor({
             htmlFor="confirm-anonymized"
             className="cursor-pointer text-sm leading-6 font-normal text-slate-700"
           >
-            I reviewed every field above. It contains no real patient,
-            hospital, client, or person identifiers and is safe to send to
-            Gemini.
+            {t("summaries.confirmAnonymized")}
           </Label>
         </div>
       </div>
@@ -385,7 +398,7 @@ function PrivacyEditor({
               className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 underline-offset-4 hover:underline"
             >
               <ExternalLink aria-hidden="true" className="size-3.5" />
-              Open in weekly reports
+              {t("summaries.openInReports")}
             </Link>
           )}
         </div>
@@ -399,14 +412,18 @@ export function SummaryGenerator({
   defaultRange,
   onRangePrepared,
 }: SummaryGeneratorProps): React.JSX.Element {
+  const { t } = useLocale();
   const [range, setRange] = useState(defaultRange);
   const [preparedRange, setPreparedRange] = useState<DateRange | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [rangeError, setRangeError] = useState("");
+  const loadEntriesFailed = t("summaries.loadEntriesFailed");
   const incidentsQuery = useQuery({
     queryKey: ["incidents", { ...preparedRange, purpose: "summary" }],
     queryFn: () =>
-      preparedRange ? fetchRangeIncidents(preparedRange) : Promise.resolve([]),
+      preparedRange
+        ? fetchRangeIncidents(preparedRange, loadEntriesFailed)
+        : Promise.resolve([]),
     enabled: preparedRange !== null,
   });
   const editorKey = useMemo(
@@ -424,7 +441,9 @@ export function SummaryGenerator({
     const parsed = summaryDateRangeSchema.safeParse(range);
 
     if (!parsed.success) {
-      setRangeError(parsed.error.issues[0]?.message ?? "Choose valid dates.");
+      setRangeError(
+        parsed.error.issues[0]?.message ?? t("summaries.chooseValidDates"),
+      );
       return;
     }
 
@@ -442,7 +461,7 @@ export function SummaryGenerator({
         className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end sm:p-5"
       >
         <div className="grid gap-2">
-          <Label htmlFor="week-start">Start date</Label>
+          <Label htmlFor="week-start">{t("summaries.startDate")}</Label>
           <Input
             id="week-start"
             type="date"
@@ -457,7 +476,7 @@ export function SummaryGenerator({
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="week-end">End date</Label>
+          <Label htmlFor="week-end">{t("summaries.endDate")}</Label>
           <Input
             id="week-end"
             type="date"
@@ -473,7 +492,7 @@ export function SummaryGenerator({
         </div>
         <Button type="submit" variant="outline" className="h-11 bg-white">
           <LockKeyhole aria-hidden="true" />
-          Prepare safe preview
+          {t("summaries.preparePreview")}
         </Button>
         {rangeError && (
           <p className="text-sm font-medium text-red-700 sm:col-span-3">
@@ -486,17 +505,17 @@ export function SummaryGenerator({
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader className="pr-10">
             <DialogTitle className="text-lg font-semibold">
-              Review safe preview
+              {t("summaries.reviewPreviewTitle")}
             </DialogTitle>
             <DialogDescription>
-              Verify and anonymize every field before generating the report.
+              {t("summaries.reviewPreviewDescription")}
             </DialogDescription>
           </DialogHeader>
 
           {incidentsQuery.isFetching ? (
             <div
               className="space-y-4 rounded-xl border border-slate-200 bg-white p-5"
-              aria-label="Preparing entry preview"
+              aria-label={t("summaries.preparingPreview")}
             >
               <Skeleton className="h-5 w-36" />
               <Skeleton className="h-11 w-full" />
@@ -512,7 +531,7 @@ export function SummaryGenerator({
                 onClick={() => void incidentsQuery.refetch()}
                 className="mt-4 h-11 border-red-300 bg-white"
               >
-                Try again
+                {t("summaries.tryAgain")}
               </Button>
             </div>
           ) : preparedRange && incidentsQuery.data ? (

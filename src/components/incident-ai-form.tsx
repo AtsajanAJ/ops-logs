@@ -16,6 +16,7 @@ import {
   draftIncidentFromNotes,
 } from "@/app/actions/incidents";
 import { ImageUploadField } from "@/components/image-upload-field";
+import { useLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -30,24 +31,19 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { SystemAreaField } from "@/components/system-area-field";
 import { toast } from "@/components/ui/toast";
-import { useLocale } from "@/components/locale-provider";
 import {
   initialIncidentActionState,
   initialIncidentDraftState,
-  entryTypeLabels,
   entryTypeValues,
-  severityLabels,
   severityValues,
   type EntryTypeValue,
   type IncidentActionState,
   type IncidentDraft,
 } from "@/lib/incidents";
 import { writableSitesFor } from "@/lib/permissions";
-import { siteLabels, siteValues, type SiteValue } from "@/lib/sites";
+import { siteValues, type SiteValue } from "@/lib/sites";
 import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 import { cn } from "@/lib/utils";
-
-const severityFallback = severityLabels.MEDIUM;
 
 function GenerateButton({
   disabled,
@@ -55,6 +51,7 @@ function GenerateButton({
   disabled: boolean;
 }): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
 
   return (
     <Button
@@ -68,7 +65,7 @@ function GenerateButton({
       ) : (
         <WandSparkles aria-hidden="true" />
       )}
-      {pending ? "Generating…" : "Generate draft"}
+      {pending ? t("aiAssist.generating") : t("aiAssist.generateDraft")}
     </Button>
   );
 }
@@ -79,6 +76,7 @@ function SaveButton({
   disabled?: boolean;
 }): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
   const busy = pending || disabled;
 
   return (
@@ -93,7 +91,7 @@ function SaveButton({
       ) : (
         <Plus aria-hidden="true" />
       )}
-      {busy ? "Saving…" : "Log incident"}
+      {busy ? t("aiAssist.saving") : t("aiAssist.logIncident")}
     </Button>
   );
 }
@@ -123,6 +121,7 @@ function AiDraftForm({
   onStartOver,
   saveFormRef,
 }: AiDraftFormProps): React.JSX.Element {
+  const { t } = useLocale();
   const restored =
     saveState.status === "error" ? saveState.values : null;
   const title = restored?.title || draft.title;
@@ -149,7 +148,7 @@ function AiDraftForm({
     <div className="grid gap-4">
       <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
         <p className="text-sm font-medium text-emerald-900">
-          AI draft ready — review and edit before saving.
+          {t("aiAssist.draftReady")}
         </p>
       </div>
 
@@ -164,7 +163,7 @@ function AiDraftForm({
         className="grid gap-4"
       >
         <div className="grid gap-2">
-          <Label htmlFor={`${idPrefix}draft-title`}>Title</Label>
+          <Label htmlFor={`${idPrefix}draft-title`}>{t("aiAssist.title")}</Label>
           <Input
             id={`${idPrefix}draft-title`}
             name="title"
@@ -182,7 +181,9 @@ function AiDraftForm({
           )}
         >
           <div className="grid gap-2">
-            <Label htmlFor={`${idPrefix}draft-entry-type`}>Type</Label>
+            <Label htmlFor={`${idPrefix}draft-entry-type`}>
+              {t("aiAssist.type")}
+            </Label>
             <Select
               name="entryType"
               value={entryType}
@@ -196,15 +197,14 @@ function AiDraftForm({
               >
                 <SelectValue>
                   {(value) =>
-                    entryTypeLabels[value as keyof typeof entryTypeLabels] ??
-                    entryTypeLabels.INCIDENT
+                    t(`entryType.${(value as EntryTypeValue) ?? "INCIDENT"}`)
                   }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {entryTypeValues.map((value) => (
                   <SelectItem key={value} value={value}>
-                    {entryTypeLabels[value]}
+                    {t(`entryType.${value}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -213,23 +213,22 @@ function AiDraftForm({
 
           {entryType === "INCIDENT" && (
             <div className="grid gap-2">
-              <Label htmlFor={`${idPrefix}draft-severity`}>Severity</Label>
+              <Label htmlFor={`${idPrefix}draft-severity`}>
+                {t("aiAssist.severity")}
+              </Label>
               <Select name="severity" defaultValue={severityDefault}>
                 <SelectTrigger
                   id={`${idPrefix}draft-severity`}
                   className="h-11! w-full bg-white"
                 >
                   <SelectValue>
-                    {(value) =>
-                      severityLabels[value as keyof typeof severityLabels] ??
-                      severityFallback
-                    }
+                    {(value) => t(`severity.${(value as string) ?? "MEDIUM"}`)}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {severityValues.map((s) => (
                     <SelectItem key={s} value={s}>
-                      {severityLabels[s]}
+                      {t(`severity.${s}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -238,13 +237,13 @@ function AiDraftForm({
           )}
 
           <div className="grid gap-2">
-            <Label htmlFor={`${idPrefix}draft-site`}>Site</Label>
+            <Label htmlFor={`${idPrefix}draft-site`}>{t("aiAssist.site")}</Label>
             {siteLocked ? (
               <>
                 <input type="hidden" name="site" value={draftSite} />
                 <Input
                   id={`${idPrefix}draft-site`}
-                  value={siteLabels[draftSite]}
+                  value={t(`sites.${draftSite}`)}
                   readOnly
                   className="h-11 bg-slate-50"
                 />
@@ -256,16 +255,13 @@ function AiDraftForm({
                   className="h-11! w-full bg-white"
                 >
                   <SelectValue>
-                    {(value) =>
-                      siteLabels[value as keyof typeof siteLabels] ??
-                      siteLabels.BANGKOK
-                    }
+                    {(value) => t(`sites.${(value as string) ?? "BANGKOK"}`)}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {writableSites.map((site) => (
                     <SelectItem key={site} value={site}>
-                      {siteLabels[site]}
+                      {t(`sites.${site}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -275,19 +271,23 @@ function AiDraftForm({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor={`${idPrefix}draft-area`}>System area</Label>
+          <Label htmlFor={`${idPrefix}draft-area`}>
+            {t("aiAssist.systemArea")}
+          </Label>
           <SystemAreaField
             id={`${idPrefix}draft-area`}
             defaultValue={systemArea}
-            selectPlaceholder="Select system area"
-            customPlaceholder="Type a custom system…"
-            addLabel="Add custom system"
-            listLabel="Back to system list"
+            selectPlaceholder={t("form.selectSystemArea")}
+            customPlaceholder={t("form.systemAreaPlaceholder")}
+            addLabel={t("form.addCustomSystemArea")}
+            listLabel={t("form.usePresetSystemArea")}
           />
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor={`${idPrefix}draft-desc`}>Description</Label>
+          <Label htmlFor={`${idPrefix}draft-desc`}>
+            {t("aiAssist.description")}
+          </Label>
           <Textarea
             id={`${idPrefix}draft-desc`}
             name="description"
@@ -300,7 +300,7 @@ function AiDraftForm({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor={`${idPrefix}draft-tags`}>Tags</Label>
+          <Label htmlFor={`${idPrefix}draft-tags`}>{t("aiAssist.tags")}</Label>
           <Input
             id={`${idPrefix}draft-tags`}
             name="tags"
@@ -308,11 +308,7 @@ function AiDraftForm({
             maxLength={250}
             className="h-11 bg-white"
           />
-          <p className="text-xs text-slate-500">
-            Separate up to 8 tags with commas. Prefer: outage, slow, timeout,
-            error, disconnect, login, permission, config, update, hardware,
-            vendor, workaround, intermittent.
-          </p>
+          <p className="text-xs text-slate-500">{t("aiAssist.tagsHint")}</p>
         </div>
 
         <ImageUploadField
@@ -329,7 +325,7 @@ function AiDraftForm({
               className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-950"
             >
               <RotateCcw aria-hidden="true" className="size-3.5" />
-              Start over
+              {t("aiAssist.startOver")}
             </button>
             {saveState.message && (
               <p
@@ -438,8 +434,7 @@ export function IncidentAiForm({
   if (writableSites.length === 0) {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-        You have read-only access. Ask an admin to promote you to Member and
-        assign a home site before using AI assist.
+        {t("aiAssist.readOnlyNotice")}
       </div>
     );
   }
@@ -473,21 +468,20 @@ export function IncidentAiForm({
       <div className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
         <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
         <div>
-          <p className="font-semibold">Remove real identifiers first</p>
+          <p className="font-semibold">{t("aiAssist.removeIdentifiersTitle")}</p>
           <p className="mt-0.5 text-amber-900">
-            Don&apos;t include real hospital, patient, or client names — use
-            generic labels like &quot;Site A&quot; or &quot;Client B&quot;.
+            {t("aiAssist.removeIdentifiersBody")}
           </p>
         </div>
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor={`${idPrefix}notes`}>What happened?</Label>
+        <Label htmlFor={`${idPrefix}notes`}>{t("aiAssist.notesLabel")}</Label>
         <Textarea
           ref={notesRef}
           id={`${idPrefix}notes`}
           name="notes"
-          placeholder="Describe the problem briefly — AI will structure it into a proper incident log entry."
+          placeholder={t("aiAssist.notesPlaceholder")}
           maxLength={2_000}
           rows={5}
           required
@@ -512,8 +506,7 @@ export function IncidentAiForm({
             htmlFor={`${idPrefix}confirm`}
             className="cursor-pointer text-sm leading-6 font-normal text-slate-700"
           >
-            I confirm this text contains no real patient, hospital, or client
-            identifiers.
+            {t("aiAssist.confirmAnonymized")}
           </Label>
         </div>
       </div>

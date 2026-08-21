@@ -34,6 +34,7 @@ function LifecycleSubmitButton({
   resolved: boolean;
 }): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
 
   return (
     <Button
@@ -53,7 +54,11 @@ function LifecycleSubmitButton({
       ) : (
         <CheckCircle2 aria-hidden="true" />
       )}
-      {pending ? "Saving…" : resolved ? "Reopen incident" : "Mark resolved"}
+      {pending
+        ? t("lifecycle.saving")
+        : resolved
+          ? t("lifecycle.reopen")
+          : t("lifecycle.markResolved")}
     </Button>
   );
 }
@@ -136,12 +141,14 @@ export function IncidentLifecycleDialog({
           />
         }
       >
-        {incident.resolved ? "Resolution" : "Resolve"}
+        {incident.resolved ? t("lifecycle.resolution") : t("lifecycle.resolve")}
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {incident.resolved ? "Resolution record" : "Resolve incident"}
+            {incident.resolved
+              ? t("lifecycle.resolutionRecord")
+              : t("lifecycle.resolveTitle")}
           </DialogTitle>
           <DialogDescription>{incident.title}</DialogDescription>
         </DialogHeader>
@@ -150,15 +157,15 @@ export function IncidentLifecycleDialog({
           <div className="grid gap-5">
             <div>
               <h3 className="text-sm font-semibold text-slate-700">
-                Root cause
+                {t("lifecycle.rootCause")}
               </h3>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                {incident.rootCause || "Not yet determined"}
+                {incident.rootCause || t("lifecycle.notYetDetermined")}
               </p>
             </div>
             <div>
               <h3 className="text-sm font-semibold text-slate-700">
-                Resolution
+                {t("lifecycle.resolutionLabel")}
               </h3>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700">
                 {incident.resolution}
@@ -176,24 +183,27 @@ export function IncidentLifecycleDialog({
             <input type="hidden" name="id" value={incident.id} />
             <div className="grid gap-2">
               <Label htmlFor={`root-cause-${incident.id}`}>
-                Root cause <span className="text-slate-400">(optional)</span>
+                {t("lifecycle.rootCause")}{" "}
+                <span className="text-slate-400">{t("lifecycle.optional")}</span>
               </Label>
               <Textarea
                 id={`root-cause-${incident.id}`}
                 name="rootCause"
                 defaultValue={incident.rootCause ?? ""}
-                placeholder="What caused the incident?"
+                placeholder={t("lifecycle.rootCausePlaceholder")}
                 rows={4}
                 maxLength={2_000}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor={`resolution-${incident.id}`}>Resolution</Label>
+              <Label htmlFor={`resolution-${incident.id}`}>
+                {t("lifecycle.resolutionLabel")}
+              </Label>
               <Textarea
                 id={`resolution-${incident.id}`}
                 name="resolution"
                 defaultValue={incident.resolution ?? ""}
-                placeholder="What restored service or closed the issue?"
+                placeholder={t("lifecycle.resolutionPlaceholder")}
                 rows={5}
                 maxLength={2_000}
                 required

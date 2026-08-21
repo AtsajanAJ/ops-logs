@@ -40,11 +40,10 @@ interface SummaryListProps {
   range: DateRange;
 }
 
-const dateFormatter = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-});
-
-async function fetchSummaries(range: DateRange): Promise<SummaryView[]> {
+async function fetchSummaries(
+  range: DateRange,
+  fallbackMessage: string,
+): Promise<SummaryView[]> {
   const params = new URLSearchParams({
     start: range.weekStart,
     end: range.weekEnd,
@@ -59,7 +58,7 @@ async function fetchSummaries(range: DateRange): Promise<SummaryView[]> {
       "message" in payload &&
       typeof payload.message === "string"
         ? payload.message
-        : "Weekly reports could not be loaded.";
+        : fallbackMessage;
     throw new Error(message);
   }
 
@@ -76,6 +75,7 @@ function PendingButton({
   disabled = false,
 }: PendingButtonProps): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
   const isSave = kind === "save";
 
   return (
@@ -97,7 +97,11 @@ function PendingButton({
       ) : (
         <Check aria-hidden="true" />
       )}
-      {pending ? "Working…" : isSave ? "Save changes" : "Mark reviewed"}
+      {pending
+        ? t("summaries.working")
+        : isSave
+          ? t("summaries.saveChanges")
+          : t("summaries.markReviewed")}
     </Button>
   );
 }
@@ -125,8 +129,16 @@ function SummaryCard({
     initialSummaryActionState,
   );
   const queryClient = useQueryClient();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
+  const dateFormatter = new Intl.DateTimeFormat(
+    locale === "th" ? "th-TH" : "en",
+    { dateStyle: "medium" },
+  );
   const hasUnsavedChanges = draftText.trim() !== summary.summaryText;
+  const incidentCountKey =
+    summary.incidentIds.length === 1
+      ? "summaries.incidentCount"
+      : "summaries.incidentCountPlural";
 
   useEffect(() => {
     if (saveState.status !== "success") return;
@@ -203,16 +215,17 @@ function SummaryCard({
                   }
                 >
                   {summary.reviewed
-                    ? "Reviewed"
+                    ? t("summaries.reviewed")
                     : activeDraft
-                      ? "Active draft"
-                      : "Previous draft"}
+                      ? t("summaries.activeDraft")
+                      : t("summaries.previousDraft")}
                 </Badge>
               </span>
               <span className="mt-1 block text-xs font-normal text-slate-500">
-                {summary.incidentIds.length} incident
-                {summary.incidentIds.length === 1 ? "" : "s"} · Generated{" "}
-                {dateFormatter.format(new Date(summary.createdAt))}
+                {t(incidentCountKey, { count: summary.incidentIds.length })} ·{" "}
+                {t("summaries.generatedOn", {
+                  date: dateFormatter.format(new Date(summary.createdAt)),
+                })}
               </span>
             </span>
             <ChevronDown
@@ -231,7 +244,7 @@ function SummaryCard({
           )}
         >
           <ExternalLink aria-hidden="true" className="size-3.5" />
-          View
+          {t("summaries.view")}
         </Link>
       </div>
 
@@ -250,7 +263,7 @@ function SummaryCard({
               <input type="hidden" name="id" value={summary.id} />
               <Textarea
                 name="summaryText"
-                aria-label="Report draft"
+                aria-label={t("summaries.reportDraftAria")}
                 value={draftText}
                 onChange={(event) => setDraftText(event.target.value)}
                 rows={16}
@@ -271,8 +284,8 @@ function SummaryCard({
                 }
               >
                 {hasUnsavedChanges
-                  ? "Unsaved changes — save before marking reviewed."
-                  : "All changes saved. This draft is ready for final review."}
+                  ? t("summaries.unsavedChanges")
+                  : t("summaries.allSaved")}
               </p>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <SummaryDeleteDialog summary={summary} />
@@ -308,6 +321,7 @@ function SummaryResults({
 }: {
   summaries: SummaryView[];
 }): React.JSX.Element {
+  const { t } = useLocale();
   const activeDraftId = summaries.find((summary) => !summary.reviewed)?.id ?? null;
   const [expandedId, setExpandedId] = useState<string | null>(activeDraftId);
   const [visibleCount, setVisibleCount] = useState(5);
@@ -333,7 +347,10 @@ function SummaryResults({
       {visibleCount < summaries.length && (
         <div className="mt-5 flex flex-col items-center gap-2">
           <p className="text-xs text-slate-500">
-            Showing {visibleSummaries.length} of {summaries.length} reports
+            {t("summaries.showingReports", {
+              shown: visibleSummaries.length,
+              total: summaries.length,
+            })}
           </p>
           <Button
             type="button"
@@ -341,7 +358,7 @@ function SummaryResults({
             onClick={() => setVisibleCount((current) => current + 5)}
             className="h-11 bg-white"
           >
-            Load more reports
+            {t("summaries.loadMoreReports")}
           </Button>
         </div>
       )}
@@ -352,16 +369,18 @@ function SummaryResults({
 export function SummaryList({
   range,
 }: SummaryListProps): React.JSX.Element {
+  const { t } = useLocale();
+  const loadReportsFailed = t("summaries.loadReportsFailed");
   const summariesQuery = useQuery({
     queryKey: ["summaries", range],
-    queryFn: () => fetchSummaries(range),
+    queryFn: () => fetchSummaries(range, loadReportsFailed),
   });
 
   if (summariesQuery.isPending) {
     return (
       <div
         className="space-y-4 rounded-xl border border-slate-200 bg-white p-5"
-        aria-label="Loading weekly reports"
+        aria-label={t("summaries.loadingReports")}
       >
         <div className="flex items-center justify-between gap-4">
           <Skeleton className="h-5 w-52" />
@@ -385,7 +404,7 @@ export function SummaryList({
           className="mt-4 border-red-300 bg-white"
         >
           <RefreshCw aria-hidden="true" />
-          Try again
+          {t("summaries.tryAgain")}
         </Button>
       </div>
     );
@@ -396,10 +415,10 @@ export function SummaryList({
       <div className="rounded-xl border border-dashed border-slate-300 bg-white/60 p-8 text-center">
         <FileText className="mx-auto size-6 text-slate-400" />
         <h3 className="mt-3 font-semibold text-slate-900">
-          No reports for this range
+          {t("summaries.noReportsTitle")}
         </h3>
         <p className="mt-1 text-sm text-slate-500">
-          Prepare and generate the first draft above.
+          {t("summaries.noReportsDescription")}
         </p>
       </div>
     );

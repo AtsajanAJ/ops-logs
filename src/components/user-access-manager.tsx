@@ -21,7 +21,6 @@ import {
   assignableRolesFor,
   type AuthUser,
 } from "@/lib/permissions";
-import { siteLabels, userRoleLabels } from "@/lib/sites";
 import { initialUpdateUserAccessState } from "@/lib/user-access";
 
 export type ManagedUser = {
@@ -35,6 +34,7 @@ export type ManagedUser = {
 
 function SaveButton(): React.JSX.Element {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
   return (
     <Button
       type="submit"
@@ -43,7 +43,7 @@ function SaveButton(): React.JSX.Element {
       aria-busy={pending}
       className="h-11 w-full min-w-[7.5rem] sm:w-auto"
     >
-      {pending ? "Saving…" : "Save access"}
+      {pending ? t("settingsUi.saving") : t("settingsUi.saveAccess")}
     </Button>
   );
 }
@@ -159,7 +159,7 @@ function UserAccessRow({
       </div>
 
       <div className="grid min-w-0 gap-1.5">
-        <FieldLabel htmlFor={roleId}>Role</FieldLabel>
+        <FieldLabel htmlFor={roleId}>{t("settingsUi.role")}</FieldLabel>
         <Select
           name="role"
           value={role}
@@ -171,16 +171,13 @@ function UserAccessRow({
             aria-describedby={state.message ? messageId : undefined}
           >
             <SelectValue>
-              {(value) =>
-                userRoleLabels[value as keyof typeof userRoleLabels] ??
-                String(value)
-              }
+              {(value) => t(`roles.${(value as UserRole) ?? user.role}`)}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {roleOptions.map((roleOption) => (
               <SelectItem key={roleOption} value={roleOption}>
-                {userRoleLabels[roleOption]}
+                {t(`roles.${roleOption}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -188,7 +185,7 @@ function UserAccessRow({
       </div>
 
       <div className="grid min-w-0 gap-1.5">
-        <FieldLabel htmlFor={siteId}>Home site</FieldLabel>
+        <FieldLabel htmlFor={siteId}>{t("settingsUi.homeSite")}</FieldLabel>
         <Select
           name="homeSite"
           value={homeSite}
@@ -200,21 +197,21 @@ function UserAccessRow({
             className="h-11! w-full! min-w-0 bg-white"
             aria-describedby={state.message ? messageId : undefined}
           >
-            <SelectValue placeholder="None">
+            <SelectValue placeholder={t("settingsUi.none")}>
               {(value) =>
                 value && value !== "__none__"
-                  ? siteLabels[value as keyof typeof siteLabels]
-                  : "None"
+                  ? t(`sites.${value as Site}`)
+                  : t("settingsUi.none")
               }
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {!homeSiteRequired ? (
-              <SelectItem value="__none__">None</SelectItem>
+              <SelectItem value="__none__">{t("settingsUi.none")}</SelectItem>
             ) : null}
             {siteOptions.map((site) => (
               <SelectItem key={site} value={site}>
-                {siteLabels[site]}
+                {t(`sites.${site}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -238,17 +235,16 @@ export function UserAccessManager({
   users: ManagedUser[];
   actor: AuthUser;
 }): React.JSX.Element {
+  const { t } = useLocale();
+
   if (users.length === 0) {
-    return (
-      <p className="text-sm text-slate-600">No registered users yet.</p>
-    );
+    return <p className="text-sm text-slate-600">{t("settingsUi.noUsers")}</p>;
   }
 
   return (
     <div>
       <p className="border-b border-slate-100 px-0 pb-4 text-xs leading-5 text-slate-500">
-        Members and site admins need a home site. Use None for Visitor or Super
-        Admin.
+        {t("settingsUi.accessHint")}
       </p>
       {users.map((user) => (
         <UserAccessRow key={user.id} user={user} actor={actor} />
