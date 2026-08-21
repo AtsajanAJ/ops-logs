@@ -3,7 +3,6 @@ import sharp from "sharp";
 function makeSvg(size, { maskable = false } = {}) {
   const pad = size * 0.18;
   const inner = size - pad * 2;
-  const cx = size / 2;
   const cy = size / 2;
   const stroke = Math.max(size * 0.055, 8);
   const left = pad + inner * 0.08;
@@ -37,7 +36,6 @@ function makeSvg(size, { maskable = false } = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect width="${size}" height="${size}" rx="${radius}" fill="#020617"/>
   <path d="${pathD}" fill="none" stroke="#ffffff" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="${cx}" cy="${cy - inner * 0.02}" r="${Math.max(size * 0.035, 5)}" fill="#fb923c"/>
 </svg>`;
 }
 
