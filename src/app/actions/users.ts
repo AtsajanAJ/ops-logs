@@ -8,6 +8,7 @@ import { getDb } from "@/lib/db";
 import { canManageUsers } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { siteValues, userRoleValues } from "@/lib/sites";
+import type { UpdateUserAccessState } from "@/lib/user-access";
 
 const updateUserAccessSchema = z
   .object({
@@ -24,16 +25,6 @@ const updateUserAccessSchema = z
       });
     }
   });
-
-export type UpdateUserAccessState = {
-  status: "idle" | "success" | "error";
-  message: string;
-};
-
-export const initialUpdateUserAccessState: UpdateUserAccessState = {
-  status: "idle",
-  message: "",
-};
 
 export async function updateUserAccess(
   _previousState: UpdateUserAccessState,

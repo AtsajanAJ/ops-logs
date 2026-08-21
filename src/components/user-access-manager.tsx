@@ -1,12 +1,9 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useId, useState } from "react";
 import { useFormStatus } from "react-dom";
 
-import {
-  initialUpdateUserAccessState,
-  updateUserAccess,
-} from "@/app/actions/users";
+import { updateUserAccess } from "@/app/actions/users";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +20,7 @@ import {
   userRoleLabels,
   userRoleValues,
 } from "@/lib/sites";
+import { initialUpdateUserAccessState } from "@/lib/user-access";
 
 export type ManagedUser = {
   id: string;
@@ -70,6 +68,8 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
     updateUserAccess,
     initialUpdateUserAccessState,
   );
+  const [role, setRole] = useState(user.role);
+  const [homeSite, setHomeSite] = useState(user.homeSite ?? "__none__");
   const messageId = useId();
   const roleId = `role-${user.id}`;
   const siteId = `site-${user.id}`;
@@ -101,7 +101,13 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
 
       <div className="grid min-w-0 gap-1.5">
         <FieldLabel htmlFor={roleId}>Role</FieldLabel>
-        <Select name="role" defaultValue={user.role}>
+        <Select
+          name="role"
+          value={role}
+          onValueChange={(value) =>
+            setRole((value as UserRole | null) ?? user.role)
+          }
+        >
           <SelectTrigger
             id={roleId}
             className="h-11! w-full! min-w-0 bg-white"
@@ -115,9 +121,9 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {userRoleValues.map((role) => (
-              <SelectItem key={role} value={role}>
-                {userRoleLabels[role]}
+            {userRoleValues.map((roleOption) => (
+              <SelectItem key={roleOption} value={roleOption}>
+                {userRoleLabels[roleOption]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -126,7 +132,11 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
 
       <div className="grid min-w-0 gap-1.5">
         <FieldLabel htmlFor={siteId}>Home site</FieldLabel>
-        <Select name="homeSite" defaultValue={user.homeSite ?? "__none__"}>
+        <Select
+          name="homeSite"
+          value={homeSite}
+          onValueChange={(value) => setHomeSite(value ?? "__none__")}
+        >
           <SelectTrigger
             id={siteId}
             className="h-11! w-full! min-w-0 bg-white"
