@@ -111,6 +111,7 @@ model IncidentLog {
   rootCause   String?
   resolution  String?
   tags        String[]
+  imageUrls   String[]  @default([])
   createdAt   DateTime  @default(now())
   resolvedAt  DateTime?
   createdById String?

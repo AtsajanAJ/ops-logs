@@ -5,6 +5,8 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Inbox,
   LoaderCircle,
   RefreshCw,
@@ -15,6 +17,12 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { IncidentDeleteDialog } from "@/components/incident-delete-dialog";
 import { IncidentLifecycleDialog } from "@/components/incident-lifecycle-dialog";
@@ -152,6 +160,10 @@ function IncidentCard({
   canWrite,
 }: IncidentCardProps): React.JSX.Element {
   const { t } = useLocale();
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const viewerOpen = viewerIndex !== null;
+  const activeUrl =
+    viewerIndex !== null ? (incident.imageUrls[viewerIndex] ?? null) : null;
 
   return (
     <article
@@ -227,10 +239,40 @@ function IncidentCard({
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
             {incident.description}
           </p>
+          {incident.imageUrls.length > 0 && (
+            <ul
+              className="mt-3 flex flex-wrap gap-2"
+              aria-label={t("ledger.photos")}
+            >
+              {incident.imageUrls.map((url, index) => (
+                <li key={url}>
+                  <button
+                    type="button"
+                    onClick={() => setViewerIndex(index)}
+                    className="block overflow-hidden rounded-lg border border-slate-200 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
+                    aria-label={t("ledger.viewPhoto", {
+                      index: String(index + 1),
+                    })}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={t("ledger.photoAlt", { index: String(index + 1) })}
+                      className="size-16 object-cover sm:size-20"
+                      loading="lazy"
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           {(incident.tags.length > 0 || incident.createdByName) && (
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
               {incident.tags.length > 0 && (
-                <div className="flex min-w-0 flex-1 flex-wrap gap-1.5" aria-label="Tags">
+                <div
+                  className="flex min-w-0 flex-1 flex-wrap gap-1.5"
+                  aria-label="Tags"
+                >
                   {incident.tags.map((tag) => (
                     <Badge
                       key={tag}
@@ -246,7 +288,9 @@ function IncidentCard({
                 <span
                   className={cn(
                     "text-xs font-medium text-slate-500",
-                    incident.tags.length > 0 ? "ml-auto shrink-0" : "w-full text-right",
+                    incident.tags.length > 0
+                      ? "ml-auto shrink-0"
+                      : "w-full text-right",
                   )}
                 >
                   {t("ledger.loggedBy", { name: incident.createdByName })}
@@ -256,6 +300,93 @@ function IncidentCard({
           )}
         </div>
       </div>
+
+      <Dialog
+        open={viewerOpen}
+        onOpenChange={(open) => {
+          if (!open) setViewerIndex(null);
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="gap-3 border-none bg-slate-950 p-3 text-white ring-0 sm:max-w-3xl"
+        >
+          <DialogTitle className="sr-only">
+            {t("ledger.viewPhoto", {
+              index: String((viewerIndex ?? 0) + 1),
+            })}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {t("ledger.photoViewerHint")}
+          </DialogDescription>
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon-sm"
+              className="bg-white/90 text-slate-950 hover:bg-white"
+              aria-label={t("ledger.closePhoto")}
+              onClick={() => setViewerIndex(null)}
+            >
+              <X />
+            </Button>
+          </div>
+
+          <div className="relative flex min-h-48 items-center justify-center">
+            {activeUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={activeUrl}
+                alt={t("ledger.photoAlt", {
+                  index: String((viewerIndex ?? 0) + 1),
+                })}
+                className="max-h-[75dvh] w-full rounded-lg object-contain"
+              />
+            )}
+
+            {incident.imageUrls.length > 1 && viewerIndex !== null && (
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="absolute top-1/2 left-2 size-9 -translate-y-1/2 bg-white/90 text-slate-950 hover:bg-white"
+                  aria-label={t("ledger.previousPhoto")}
+                  onClick={() =>
+                    setViewerIndex(
+                      (viewerIndex - 1 + incident.imageUrls.length) %
+                        incident.imageUrls.length,
+                    )
+                  }
+                >
+                  <ChevronLeft />
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="absolute top-1/2 right-2 size-9 -translate-y-1/2 bg-white/90 text-slate-950 hover:bg-white"
+                  aria-label={t("ledger.nextPhoto")}
+                  onClick={() =>
+                    setViewerIndex(
+                      (viewerIndex + 1) % incident.imageUrls.length,
+                    )
+                  }
+                >
+                  <ChevronRight />
+                </Button>
+              </>
+            )}
+          </div>
+
+          {incident.imageUrls.length > 1 && viewerIndex !== null && (
+            <p className="text-center text-xs text-slate-300">
+              {viewerIndex + 1} / {incident.imageUrls.length}
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
     </article>
   );
 }

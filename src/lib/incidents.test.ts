@@ -39,6 +39,7 @@ describe("incident validation", () => {
       systemArea: undefined,
       site: "BANGKOK",
       tags: ["network", "timeout"],
+      imageUrls: [],
     });
   });
 
@@ -54,6 +55,40 @@ describe("incident validation", () => {
 
     expect(result.severity).toBe("LOW");
     expect(result.entryType).toBe("SERVICE");
+    expect(result.imageUrls).toEqual([]);
+  });
+
+  it("accepts up to three Cloudinary image URLs", () => {
+    const urls = [
+      "https://res.cloudinary.com/demo/image/upload/a.jpg",
+      "https://res.cloudinary.com/demo/image/upload/b.jpg",
+    ];
+    const result = incidentInputSchema.parse({
+      title: "VPN down",
+      description: "Users cannot connect.",
+      severity: "HIGH",
+      entryType: "INCIDENT",
+      systemArea: "",
+      site: "BANGKOK",
+      tags: "vpn",
+      imageUrls: urls,
+    });
+    expect(result.imageUrls).toEqual(urls);
+  });
+
+  it("rejects non-Cloudinary image URLs", () => {
+    expect(
+      incidentInputSchema.safeParse({
+        title: "VPN down",
+        description: "Users cannot connect.",
+        severity: "HIGH",
+        entryType: "INCIDENT",
+        systemArea: "",
+        site: "BANGKOK",
+        tags: "",
+        imageUrls: ["https://example.com/photo.jpg"],
+      }).success,
+    ).toBe(false);
   });
 
   it("requires severity for incidents", () => {

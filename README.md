@@ -20,6 +20,9 @@ Optional Google sign-in: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from 
 OAuth Web client. Authorized redirect URI must be
 `{BETTER_AUTH_URL}/api/auth/callback/google` (local and production separately).
 To generate weekly drafts, also add a `GEMINI_API_KEY` from Google AI Studio.
+Optional case photos: set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and
+`CLOUDINARY_API_SECRET` from a Cloudinary account (uploads go to Cloudinary; Neon
+stores only image URLs).
 Then run:
 
 ```bash
@@ -108,6 +111,6 @@ using the app.
 
 Before exposing the app publicly, configure `DATABASE_URL`, `BETTER_AUTH_SECRET`,
 `BETTER_AUTH_URL`, `ADMIN_EMAIL`, and `GEMINI_API_KEY` in Vercel (plus
-`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` if using Google sign-in), then run production
-migrations. Cron automation is still deferred and must never bypass the human
-anonymization review.
+`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` if using Google sign-in, and
+`CLOUDINARY_*` if using case photo uploads), then run production migrations. Cron
+automation is still deferred and must never bypass the human anonymization review.

@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, PenLine, Plus, WandSparkles } from "lucide-react";
 
 import { createIncident } from "@/app/actions/incidents";
+import { ImageUploadField } from "@/components/image-upload-field";
 import { IncidentAiForm } from "@/components/incident-ai-form";
 import { SystemAreaField } from "@/components/system-area-field";
 import { Button } from "@/components/ui/button";
@@ -30,23 +31,28 @@ import { useCurrentAuthUser } from "@/lib/use-current-auth-user";
 import { useLocale } from "@/components/locale-provider";
 import { cn } from "@/lib/utils";
 
-function SubmitButton(): React.JSX.Element {
+function SubmitButton({
+  disabled = false,
+}: {
+  disabled?: boolean;
+}): React.JSX.Element {
   const { pending } = useFormStatus();
   const { t } = useLocale();
+  const busy = pending || disabled;
 
   return (
     <Button
       type="submit"
       size="lg"
-      disabled={pending}
+      disabled={busy}
       className="h-11 w-full bg-slate-950 px-5 text-white hover:bg-slate-800 sm:w-auto"
     >
-      {pending ? (
+      {busy ? (
         <LoaderCircle aria-hidden="true" className="animate-spin" />
       ) : (
         <Plus aria-hidden="true" />
       )}
-      {pending ? t("form.savingIncident") : t("form.logIncident")}
+      {busy ? t("form.savingIncident") : t("form.logIncident")}
     </Button>
   );
 }
@@ -78,6 +84,8 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   const siteLocked = writableSites.length === 1;
   const [entryType, setEntryType] = useState<EntryTypeValue>("INCIDENT");
   const [systemAreaKey, setSystemAreaKey] = useState(0);
+  const [imagesKey, setImagesKey] = useState(0);
+  const [imagesUploading, setImagesUploading] = useState(false);
   const { t } = useLocale();
   const titleId = `${idPrefix}title`;
   const titleErrorId = `${idPrefix}title-error`;
@@ -91,10 +99,22 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
   useEffect(() => {
     if (state.status !== "success") return;
 
-    formRef.current?.reset();
-    setEntryType("INCIDENT");
-    setSystemAreaKey((key) => key + 1);
-    void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    let cancelled = false;
+
+    async function resetAfterSave() {
+      await Promise.resolve();
+      if (cancelled) return;
+      formRef.current?.reset();
+      setEntryType("INCIDENT");
+      setSystemAreaKey((key) => key + 1);
+      setImagesKey((key) => key + 1);
+      void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    }
+
+    void resetAfterSave();
+    return () => {
+      cancelled = true;
+    };
   }, [queryClient, state]);
 
   if (writableSites.length === 0) {
@@ -314,6 +334,12 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
         <FieldError message={state.fieldErrors.tags} />
       </div>
 
+      <ImageUploadField
+        key={imagesKey}
+        id={`${idPrefix}photos`}
+        onUploadingChange={setImagesUploading}
+      />
+
       <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-5">
           <div
@@ -330,7 +356,7 @@ function ManualForm({ idPrefix }: { idPrefix: string }): React.JSX.Element {
             <p className="text-xs text-slate-500">{t("form.ctrlEnter")}</p>
           )}
         </div>
-        <SubmitButton />
+        <SubmitButton disabled={imagesUploading} />
       </div>
     </form>
   );

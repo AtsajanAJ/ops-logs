@@ -11,6 +11,7 @@ import { getDb } from "@/lib/db";
 import {
   incidentDraftInputSchema,
   incidentInputSchema,
+  parseImageUrls,
   resolveIncidentSchema,
   type IncidentActionState,
   type IncidentDraftActionState,
@@ -33,9 +34,11 @@ const fieldNames = [
   "site",
   "entryType",
   "tags",
+  "imageUrls",
 ] as const;
 
 function formValue(formData: FormData, key: IncidentFieldName): string {
+  if (key === "imageUrls") return "";
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
 }
@@ -80,6 +83,7 @@ export async function createIncident(
     systemArea: formValue(formData, "systemArea"),
     site: formValue(formData, "site"),
     tags: formValue(formData, "tags"),
+    imageUrls: parseImageUrls(formData.getAll("imageUrls")),
   });
 
   if (!parsed.success) {

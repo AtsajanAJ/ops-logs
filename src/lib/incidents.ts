@@ -90,6 +90,8 @@ export const SUGGESTED_TAGS = [
   "intermittent",
 ] as const;
 
+export const MAX_INCIDENT_IMAGES = 3;
+
 export type IncidentFieldName =
   | "title"
   | "description"
@@ -97,7 +99,37 @@ export type IncidentFieldName =
   | "systemArea"
   | "site"
   | "entryType"
-  | "tags";
+  | "tags"
+  | "imageUrls";
+
+function isCloudinaryImageUrl(value: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(value);
+    return (
+      protocol === "https:" &&
+      (hostname === "res.cloudinary.com" || hostname.endsWith(".cloudinary.com"))
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function parseImageUrls(values: unknown): string[] {
+  const raw = Array.isArray(values)
+    ? values
+    : typeof values === "string"
+      ? [values]
+      : [];
+
+  return [
+    ...new Set(
+      raw
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ].slice(0, MAX_INCIDENT_IMAGES);
+}
 
 export interface IncidentActionState {
   status: "idle" | "success" | "error";
@@ -163,6 +195,22 @@ export const incidentInputSchema = z
       .string()
       .max(250, "Keep the tag list under 250 characters.")
       .transform(parseTags),
+    imageUrls: z
+      .array(z.string())
+      .max(MAX_INCIDENT_IMAGES, "Attach up to 3 images.")
+      .default([])
+      .transform(parseImageUrls)
+      .superRefine((urls, context) => {
+        for (const [index, url] of urls.entries()) {
+          if (!isCloudinaryImageUrl(url)) {
+            context.addIssue({
+              code: "custom",
+              message: "Only Cloudinary image URLs are allowed.",
+              path: [index],
+            });
+          }
+        }
+      }),
   })
   .superRefine((data, context) => {
     if (data.entryType !== "INCIDENT") return;
@@ -185,6 +233,7 @@ export const incidentInputSchema = z
     systemArea: data.systemArea,
     site: data.site,
     tags: data.tags,
+    imageUrls: data.imageUrls,
     severity:
       data.entryType === "SERVICE"
         ? ("LOW" as const)
@@ -233,6 +282,7 @@ export interface IncidentView {
   rootCause: string | null;
   resolution: string | null;
   tags: string[];
+  imageUrls: string[];
   createdAt: string;
   resolvedAt: string | null;
   /** Display name of the user who logged the entry; null for legacy rows. */

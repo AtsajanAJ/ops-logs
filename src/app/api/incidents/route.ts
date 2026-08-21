@@ -99,6 +99,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       rootCause: incident.rootCause,
       resolution: incident.resolution,
       tags: incident.tags,
+      imageUrls: incident.imageUrls,
       createdAt: incident.createdAt.toISOString(),
       resolvedAt: incident.resolvedAt?.toISOString() ?? null,
       createdByName: incident.createdBy?.name ?? null,

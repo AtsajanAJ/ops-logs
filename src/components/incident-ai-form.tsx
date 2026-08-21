@@ -15,6 +15,7 @@ import {
   createIncident,
   draftIncidentFromNotes,
 } from "@/app/actions/incidents";
+import { ImageUploadField } from "@/components/image-upload-field";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -70,22 +71,27 @@ function GenerateButton({
   );
 }
 
-function SaveButton(): React.JSX.Element {
+function SaveButton({
+  disabled = false,
+}: {
+  disabled?: boolean;
+}): React.JSX.Element {
   const { pending } = useFormStatus();
+  const busy = pending || disabled;
 
   return (
     <Button
       type="submit"
       size="lg"
-      disabled={pending}
+      disabled={busy}
       className="h-11 w-full bg-slate-950 px-5 text-white hover:bg-slate-800 sm:w-auto"
     >
-      {pending ? (
+      {busy ? (
         <LoaderCircle aria-hidden="true" className="animate-spin" />
       ) : (
         <Plus aria-hidden="true" />
       )}
-      {pending ? "Saving…" : "Log incident"}
+      {busy ? "Saving…" : "Log incident"}
     </Button>
   );
 }
@@ -116,6 +122,7 @@ function AiDraftForm({
   saveFormRef,
 }: AiDraftFormProps): React.JSX.Element {
   const [entryType, setEntryType] = useState<EntryTypeValue>(initialEntryType);
+  const [imagesUploading, setImagesUploading] = useState(false);
 
   return (
     <div className="grid gap-4">
@@ -278,6 +285,11 @@ function AiDraftForm({
           </p>
         </div>
 
+        <ImageUploadField
+          id={`${idPrefix}draft-photos`}
+          onUploadingChange={setImagesUploading}
+        />
+
         <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -301,7 +313,7 @@ function AiDraftForm({
               </p>
             )}
           </div>
-          <SaveButton />
+          <SaveButton disabled={imagesUploading} />
         </div>
       </form>
     </div>
@@ -337,18 +349,40 @@ export function IncidentAiForm({
   const siteLocked = writableSites.length === 1;
 
   useEffect(() => {
-    if (draftState.status === "success" && draftState.draft) {
-      setDraft(draftState.draft);
+    if (draftState.status !== "success" || !draftState.draft) return;
+
+    let cancelled = false;
+    const nextDraft = draftState.draft;
+
+    async function applyDraft() {
+      await Promise.resolve();
+      if (!cancelled) setDraft(nextDraft);
     }
+
+    void applyDraft();
+    return () => {
+      cancelled = true;
+    };
   }, [draftState]);
 
   useEffect(() => {
-    if (saveState.status === "success") {
+    if (saveState.status !== "success") return;
+
+    let cancelled = false;
+
+    async function resetAfterSave() {
+      await Promise.resolve();
+      if (cancelled) return;
       setDraft(null);
       setConfirmed(false);
       if (notesRef.current) notesRef.current.value = "";
       void queryClient.invalidateQueries({ queryKey: ["incidents"] });
     }
+
+    void resetAfterSave();
+    return () => {
+      cancelled = true;
+    };
   }, [queryClient, saveState]);
 
   function handleStartOver(): void {

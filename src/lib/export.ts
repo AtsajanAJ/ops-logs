@@ -10,6 +10,7 @@ export interface ExportIncident {
   rootCause: string | null;
   resolution: string | null;
   tags: string[];
+  imageUrls?: string[];
   createdAt: Date | string;
   resolvedAt: Date | string | null;
   createdByName?: string | null;
@@ -55,6 +56,7 @@ export function createIncidentCsv(incidents: ExportIncident[]): string {
     "rootCause",
     "resolution",
     "tags",
+    "imageUrls",
     "createdAt",
     "resolvedAt",
     "createdByName",
@@ -72,6 +74,7 @@ export function createIncidentCsv(incidents: ExportIncident[]): string {
       incident.rootCause,
       incident.resolution,
       incident.tags,
+      (incident.imageUrls ?? []).join(";"),
       incident.createdAt,
       incident.resolvedAt,
       incident.createdByName ?? "",
