@@ -12,6 +12,7 @@ export interface ExportIncident {
   tags: string[];
   createdAt: Date | string;
   resolvedAt: Date | string | null;
+  createdByName?: string | null;
 }
 
 export interface ExportSummary {
@@ -56,6 +57,7 @@ export function createIncidentCsv(incidents: ExportIncident[]): string {
     "tags",
     "createdAt",
     "resolvedAt",
+    "createdByName",
   ];
   const rows = incidents.map((incident) =>
     [
@@ -72,6 +74,7 @@ export function createIncidentCsv(incidents: ExportIncident[]): string {
       incident.tags,
       incident.createdAt,
       incident.resolvedAt,
+      incident.createdByName ?? "",
     ]
       .map(csvCell)
       .join(","),

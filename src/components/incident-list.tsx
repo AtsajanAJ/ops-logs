@@ -236,6 +236,11 @@ function IncidentCard({
               ))}
             </div>
           )}
+          {incident.createdByName && (
+            <p className="mt-4 text-right text-xs font-medium text-slate-500">
+              {t("ledger.loggedBy", { name: incident.createdByName })}
+            </p>
+          )}
         </div>
       </div>
     </article>

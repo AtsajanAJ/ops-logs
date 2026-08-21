@@ -14,12 +14,23 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const [incidents, summaries] = await Promise.all([
-      getDb().incidentLog.findMany({ orderBy: { createdAt: "desc" } }),
+      getDb().incidentLog.findMany({
+        include: {
+          createdBy: {
+            select: { name: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
       getDb().weeklySummary.findMany({ orderBy: { createdAt: "desc" } }),
     ]);
     const date = new Date().toISOString().slice(0, 10);
+    const incidentRows = incidents.map((incident) => ({
+      ...incident,
+      createdByName: incident.createdBy?.name ?? null,
+    }));
 
-    return new NextResponse(createJsonArchive(incidents, summaries), {
+    return new NextResponse(createJsonArchive(incidentRows, summaries), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Content-Disposition": `attachment; filename="ops-logs-archive-${date}.json"`,

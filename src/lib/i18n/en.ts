@@ -119,6 +119,7 @@ export const en = {
     emptyFiltered: "No entries match these filters. Clear one or broaden the search.",
     emptyDefault: "Log the first event to start the knowledge base.",
     resolved: "Resolved",
+    loggedBy: "Logged by {name}",
     loadMore: "Load more",
     loadOlder: "Load older",
     loading: "Loading…",

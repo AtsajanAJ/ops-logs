@@ -121,6 +121,7 @@ export const th = {
     emptyFiltered: "ไม่มีรายการที่ตรงตัวกรอง ลองล้างหรือขยายเงื่อนไข",
     emptyDefault: "บันทึกรายการแรกเพื่อเริ่มคลังความรู้",
     resolved: "ปิดแล้ว",
+    loggedBy: "บันทึกโดย {name}",
     loadMore: "โหลดเพิ่ม",
     loadOlder: "โหลดรายการเก่า",
     loading: "กำลังโหลด…",

@@ -15,6 +15,7 @@ const incident = {
   tags: ["network", "ทดสอบ"],
   createdAt: new Date("2026-07-27T07:00:00.000Z"),
   resolvedAt: new Date("2026-07-27T08:00:00.000Z"),
+  createdByName: "Ada Ops",
 };
 
 describe("data export", () => {
@@ -27,6 +28,8 @@ describe("data export", () => {
     expect(csv).toContain(`"network|ทดสอบ"`);
     expect(csv).toContain('"SERVICE"');
     expect(csv).toContain("2026-07-27T07:00:00.000Z");
+    expect(csv).toContain('"Ada Ops"');
+    expect(csv).toContain('"createdByName"');
   });
 
   it("creates a versioned complete JSON archive", () => {

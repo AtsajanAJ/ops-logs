@@ -14,11 +14,20 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const incidents = await getDb().incidentLog.findMany({
+      include: {
+        createdBy: {
+          select: { name: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
     const date = new Date().toISOString().slice(0, 10);
+    const rows = incidents.map((incident) => ({
+      ...incident,
+      createdByName: incident.createdBy?.name ?? null,
+    }));
 
-    return new NextResponse(createIncidentCsv(incidents), {
+    return new NextResponse(createIncidentCsv(rows), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="ops-incidents-${date}.csv"`,

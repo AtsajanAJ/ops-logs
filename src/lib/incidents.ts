@@ -235,6 +235,8 @@ export interface IncidentView {
   tags: string[];
   createdAt: string;
   resolvedAt: string | null;
+  /** Display name of the user who logged the entry; null for legacy rows. */
+  createdByName: string | null;
 }
 
 export interface IncidentPage {

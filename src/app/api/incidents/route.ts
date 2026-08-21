@@ -74,6 +74,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             ]
           : undefined,
       },
+      include: {
+        createdBy: {
+          select: { name: true },
+        },
+      },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : undefined,
@@ -96,6 +101,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       tags: incident.tags,
       createdAt: incident.createdAt.toISOString(),
       resolvedAt: incident.resolvedAt?.toISOString() ?? null,
+      createdByName: incident.createdBy?.name ?? null,
     }));
 
     if (limit) {
