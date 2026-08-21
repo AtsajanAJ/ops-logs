@@ -5,6 +5,7 @@ import { UserAccessManager } from "@/components/user-access-manager";
 import { PageHeading } from "@/components/page-heading";
 import { T } from "@/components/t";
 import { getDb } from "@/lib/db";
+import { isSuperAdmin } from "@/lib/permissions";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -12,9 +13,14 @@ export const metadata: Metadata = {
 };
 
 export default async function UsersSettingsPage(): Promise<React.JSX.Element> {
-  await requireAdmin();
+  const actor = await requireAdmin();
 
   const users = await getDb().user.findMany({
+    where: isSuperAdmin(actor)
+      ? undefined
+      : {
+          OR: [{ role: "VISITOR" }, { homeSite: actor.homeSite }],
+        },
     orderBy: { createdAt: "asc" },
     select: {
       id: true,
@@ -42,6 +48,7 @@ export default async function UsersSettingsPage(): Promise<React.JSX.Element> {
 
       <div className="rounded-xl border border-slate-200 bg-white px-5 py-2 sm:px-6">
         <UserAccessManager
+          actor={actor}
           users={users.map((user) => ({
             ...user,
             createdAt: user.createdAt.toISOString(),

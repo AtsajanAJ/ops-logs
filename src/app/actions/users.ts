@@ -5,7 +5,11 @@ import { z } from "zod";
 
 import type { Site, UserRole } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
-import { canManageUsers } from "@/lib/permissions";
+import {
+  canManageUsers,
+  homeSiteForRole,
+  validateUserAccessUpdate,
+} from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { siteValues, userRoleValues } from "@/lib/sites";
 import type { UpdateUserAccessState } from "@/lib/user-access";
@@ -17,10 +21,16 @@ const updateUserAccessSchema = z
     homeSite: z.enum(siteValues).optional().nullable(),
   })
   .superRefine((value, context) => {
-    if (value.role === "MEMBER" && !value.homeSite) {
+    if (
+      (value.role === "MEMBER" || value.role === "ADMIN") &&
+      !value.homeSite
+    ) {
       context.addIssue({
         code: "custom",
-        message: "Members need a home site.",
+        message:
+          value.role === "ADMIN"
+            ? "Site admins need a home site."
+            : "Members need a home site.",
         path: ["homeSite"],
       });
     }
@@ -31,7 +41,7 @@ export async function updateUserAccess(
   formData: FormData,
 ): Promise<UpdateUserAccessState> {
   const actor = await getCurrentUser();
-  if (!canManageUsers(actor)) {
+  if (!actor || !canManageUsers(actor)) {
     return {
       status: "error",
       message: "Only admins can manage user access.",
@@ -58,16 +68,36 @@ export async function updateUserAccess(
     };
   }
 
-  if (parsed.data.userId === actor?.id && parsed.data.role !== "ADMIN") {
+  const role = parsed.data.role as UserRole;
+  const homeSite = homeSiteForRole(
+    role,
+    parsed.data.homeSite as Site | null | undefined,
+  );
+
+  const target = await getDb().user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { id: true, role: true, homeSite: true },
+  });
+
+  if (!target) {
     return {
       status: "error",
-      message: "You cannot remove your own admin role.",
+      message: "User not found.",
     };
   }
 
-  const role = parsed.data.role as UserRole;
-  const homeSite =
-    role === "MEMBER" ? (parsed.data.homeSite as Site) : null;
+  const validationError = validateUserAccessUpdate(
+    actor,
+    target,
+    role,
+    homeSite,
+  );
+  if (validationError) {
+    return {
+      status: "error",
+      message: validationError,
+    };
+  }
 
   try {
     await getDb().user.update({

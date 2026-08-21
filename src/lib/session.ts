@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import type { Site, UserRole } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
-import type { AuthUser } from "@/lib/permissions";
+import { canManageUsers, type AuthUser } from "@/lib/permissions";
 
 function toAuthUser(sessionUser: {
   id: string;
@@ -43,7 +43,7 @@ export async function requireUser(): Promise<AuthUser> {
 
 export async function requireAdmin(): Promise<AuthUser> {
   const user = await requireUser();
-  if (user.role !== "ADMIN") {
+  if (!canManageUsers(user)) {
     redirect("/");
   }
   return user;

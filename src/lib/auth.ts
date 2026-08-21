@@ -38,7 +38,9 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          const role = isBootstrapAdminEmail(user.email) ? "ADMIN" : "VISITOR";
+          const role = isBootstrapAdminEmail(user.email)
+            ? "SUPER_ADMIN"
+            : "VISITOR";
           return {
             data: {
               ...user,

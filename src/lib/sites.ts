@@ -7,7 +7,12 @@ export const siteLabels: Record<SiteValue, string> = {
   PHUKET: "Phuket",
 };
 
-export const userRoleValues = ["VISITOR", "MEMBER", "ADMIN"] as const;
+export const userRoleValues = [
+  "VISITOR",
+  "MEMBER",
+  "ADMIN",
+  "SUPER_ADMIN",
+] as const;
 
 export type UserRoleValue = (typeof userRoleValues)[number];
 
@@ -15,4 +20,5 @@ export const userRoleLabels: Record<UserRoleValue, string> = {
   VISITOR: "Visitor",
   MEMBER: "Member",
   ADMIN: "Admin",
+  SUPER_ADMIN: "Super Admin",
 };

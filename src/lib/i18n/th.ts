@@ -47,6 +47,7 @@ export const th = {
     VISITOR: "ผู้เยี่ยมชม",
     MEMBER: "สมาชิก",
     ADMIN: "ผู้ดูแล",
+    SUPER_ADMIN: "ผู้ดูแลสูงสุด",
   },
   sites: {
     BANGKOK: "กรุงเทพฯ",

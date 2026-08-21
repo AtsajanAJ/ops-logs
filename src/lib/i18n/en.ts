@@ -45,6 +45,7 @@ export const en = {
     VISITOR: "Visitor",
     MEMBER: "Member",
     ADMIN: "Admin",
+    SUPER_ADMIN: "Super Admin",
   },
   sites: {
     BANGKOK: "Bangkok",

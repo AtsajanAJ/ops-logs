@@ -42,7 +42,7 @@ export default async function SettingsPage(): Promise<React.JSX.Element> {
                   User access
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Assign Visitor, Member (with home site), or Admin roles for
+                  Assign Visitor, Member, site Admin, or Super Admin roles for
                   the operations team.
                 </p>
                 <div className="mt-5">

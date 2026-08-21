@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/select";
 import type { Site, UserRole } from "@/generated/prisma/client";
 import {
-  siteLabels,
-  siteValues,
-  userRoleLabels,
-  userRoleValues,
-} from "@/lib/sites";
+  assignableHomeSitesFor,
+  assignableRolesFor,
+  type AuthUser,
+} from "@/lib/permissions";
+import { siteLabels, userRoleLabels } from "@/lib/sites";
 import { initialUpdateUserAccessState } from "@/lib/user-access";
 
 export type ManagedUser = {
@@ -63,16 +63,51 @@ function FieldLabel({
   );
 }
 
-function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
+function needsHomeSite(role: UserRole): boolean {
+  return role === "MEMBER" || role === "ADMIN";
+}
+
+function UserAccessRow({
+  user,
+  actor,
+}: {
+  user: ManagedUser;
+  actor: AuthUser;
+}): React.JSX.Element {
   const [state, action] = useActionState(
     updateUserAccess,
     initialUpdateUserAccessState,
   );
-  const [role, setRole] = useState(user.role);
-  const [homeSite, setHomeSite] = useState(user.homeSite ?? "__none__");
+  const roleOptions = assignableRolesFor(actor);
+  const siteOptions = assignableHomeSitesFor(actor);
+  const initialRole = roleOptions.includes(user.role)
+    ? user.role
+    : (roleOptions[0] ?? user.role);
+  const [role, setRole] = useState<UserRole>(initialRole);
+  const [homeSite, setHomeSite] = useState(() => {
+    if (!needsHomeSite(initialRole)) return "__none__";
+    if (user.homeSite && siteOptions.includes(user.homeSite)) {
+      return user.homeSite;
+    }
+    return siteOptions[0] ?? "__none__";
+  });
   const messageId = useId();
   const roleId = `role-${user.id}`;
   const siteId = `site-${user.id}`;
+  const homeSiteRequired = needsHomeSite(role);
+
+  function onRoleChange(value: UserRole | null): void {
+    const nextRole = value ?? user.role;
+    setRole(nextRole);
+    if (!needsHomeSite(nextRole)) {
+      setHomeSite("__none__");
+      return;
+    }
+    if (homeSite !== "__none__" && siteOptions.includes(homeSite as Site)) {
+      return;
+    }
+    setHomeSite(siteOptions[0] ?? "__none__");
+  }
 
   return (
     <form
@@ -104,9 +139,7 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
         <Select
           name="role"
           value={role}
-          onValueChange={(value) =>
-            setRole((value as UserRole | null) ?? user.role)
-          }
+          onValueChange={(value) => onRoleChange(value as UserRole | null)}
         >
           <SelectTrigger
             id={roleId}
@@ -121,7 +154,7 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {userRoleValues.map((roleOption) => (
+            {roleOptions.map((roleOption) => (
               <SelectItem key={roleOption} value={roleOption}>
                 {userRoleLabels[roleOption]}
               </SelectItem>
@@ -136,6 +169,7 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
           name="homeSite"
           value={homeSite}
           onValueChange={(value) => setHomeSite(value ?? "__none__")}
+          disabled={!homeSiteRequired && siteOptions.length === 0}
         >
           <SelectTrigger
             id={siteId}
@@ -151,8 +185,10 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__none__">None</SelectItem>
-            {siteValues.map((site) => (
+            {!homeSiteRequired ? (
+              <SelectItem value="__none__">None</SelectItem>
+            ) : null}
+            {siteOptions.map((site) => (
               <SelectItem key={site} value={site}>
                 {siteLabels[site]}
               </SelectItem>
@@ -173,8 +209,10 @@ function UserAccessRow({ user }: { user: ManagedUser }): React.JSX.Element {
 
 export function UserAccessManager({
   users,
+  actor,
 }: {
   users: ManagedUser[];
+  actor: AuthUser;
 }): React.JSX.Element {
   if (users.length === 0) {
     return (
@@ -185,10 +223,11 @@ export function UserAccessManager({
   return (
     <div>
       <p className="border-b border-slate-100 px-0 pb-4 text-xs leading-5 text-slate-500">
-        Members need a home site. Use None for Visitor or Admin.
+        Members and site admins need a home site. Use None for Visitor or Super
+        Admin.
       </p>
       {users.map((user) => (
-        <UserAccessRow key={user.id} user={user} />
+        <UserAccessRow key={user.id} user={user} actor={actor} />
       ))}
     </div>
   );
