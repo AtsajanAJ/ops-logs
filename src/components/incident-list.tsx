@@ -227,19 +227,32 @@ function IncidentCard({
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
             {incident.description}
           </p>
-          {incident.tags.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-1.5" aria-label="Tags">
-              {incident.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="bg-slate-100 text-xs text-slate-600">
-                  #{tag}
-                </Badge>
-              ))}
+          {(incident.tags.length > 0 || incident.createdByName) && (
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              {incident.tags.length > 0 && (
+                <div className="flex min-w-0 flex-1 flex-wrap gap-1.5" aria-label="Tags">
+                  {incident.tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="bg-slate-100 text-xs text-slate-600"
+                    >
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {incident.createdByName && (
+                <span
+                  className={cn(
+                    "text-xs font-medium text-slate-500",
+                    incident.tags.length > 0 ? "ml-auto shrink-0" : "w-full text-right",
+                  )}
+                >
+                  {t("ledger.loggedBy", { name: incident.createdByName })}
+                </span>
+              )}
             </div>
-          )}
-          {incident.createdByName && (
-            <p className="mt-4 text-right text-xs font-medium text-slate-500">
-              {t("ledger.loggedBy", { name: incident.createdByName })}
-            </p>
           )}
         </div>
       </div>
