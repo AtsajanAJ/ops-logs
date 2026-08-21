@@ -377,113 +377,117 @@ export function IncidentList(): React.JSX.Element {
         <div
           id="incident-filters"
           className={cn(
-            "mt-3 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid md:grid-cols-2",
-            entryType === "INCIDENT"
-              ? "xl:grid-cols-[repeat(4,minmax(8rem,1fr))_auto]"
-              : "xl:grid-cols-[repeat(3,minmax(8rem,1fr))_auto]",
-            showFilters ? "grid" : "hidden",
+            "mt-3 items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:flex",
+            showFilters ? "flex" : "hidden",
           )}
         >
-          {entryType === "INCIDENT" && (
+          <div
+            className={cn(
+              "grid min-w-0 flex-1 gap-3 md:grid-cols-2",
+              entryType === "INCIDENT" ? "xl:grid-cols-4" : "xl:grid-cols-3",
+            )}
+          >
+            {entryType === "INCIDENT" && (
+              <Select
+                value={severity}
+                onValueChange={(value) =>
+                  setSeverity((value ?? "ALL") as SeverityFilter)
+                }
+              >
+                <SelectTrigger
+                  aria-label={t("ledger.allSeverities")}
+                  className="h-9! w-full bg-white"
+                >
+                  <SelectValue>
+                    {(value) =>
+                      value === "ALL"
+                        ? t("ledger.allSeverities")
+                        : t(`severity.${value as SeverityValue}`)
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="ALL">{t("ledger.allSeverities")}</SelectItem>
+                  {severityValues.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {t(`severity.${value}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <Select
-              value={severity}
-              onValueChange={(value) =>
-                setSeverity((value ?? "ALL") as SeverityFilter)
-              }
+              value={site}
+              onValueChange={(value) => setSite((value ?? "ALL") as SiteFilter)}
             >
               <SelectTrigger
-                aria-label={t("ledger.allSeverities")}
+                aria-label={t("ledger.allSites")}
                 className="h-9! w-full bg-white"
               >
                 <SelectValue>
                   {(value) =>
                     value === "ALL"
-                      ? t("ledger.allSeverities")
-                      : t(`severity.${value as SeverityValue}`)
+                      ? t("ledger.allSites")
+                      : t(`sites.${value as SiteValue}`)
                   }
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="ALL">{t("ledger.allSeverities")}</SelectItem>
-                {severityValues.map((value) => (
+              <SelectContent>
+                <SelectItem value="ALL">{t("ledger.allSites")}</SelectItem>
+                {siteValues.map((value) => (
                   <SelectItem key={value} value={value}>
-                    {t(`severity.${value}`)}
+                    {t(`sites.${value}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          )}
 
-          <Select
-            value={site}
-            onValueChange={(value) => setSite((value ?? "ALL") as SiteFilter)}
-          >
-            <SelectTrigger
-              aria-label={t("ledger.allSites")}
-              className="h-9! w-full bg-white"
+            <Select
+              value={systemArea}
+              onValueChange={(value) => setSystemArea(value ?? "ALL")}
             >
-              <SelectValue>
-                {(value) =>
-                  value === "ALL"
-                    ? t("ledger.allSites")
-                    : t(`sites.${value as SiteValue}`)
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">{t("ledger.allSites")}</SelectItem>
-              {siteValues.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {t(`sites.${value}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                aria-label={t("ledger.allSystemAreas")}
+                className="h-9! w-full bg-white"
+              >
+                <SelectValue>
+                  {(value) =>
+                    value === "ALL" ? t("ledger.allSystemAreas") : String(value)
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t("ledger.allSystemAreas")}</SelectItem>
+                {facetsQuery.data?.systemAreas.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select
-            value={systemArea}
-            onValueChange={(value) => setSystemArea(value ?? "ALL")}
-          >
-            <SelectTrigger
-              aria-label={t("ledger.allSystemAreas")}
-              className="h-9! w-full bg-white"
-            >
-              <SelectValue>
-                {(value) =>
-                  value === "ALL" ? t("ledger.allSystemAreas") : String(value)
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">{t("ledger.allSystemAreas")}</SelectItem>
-              {facetsQuery.data?.systemAreas.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={tag} onValueChange={(value) => setTag(value ?? "ALL")}>
-            <SelectTrigger
-              aria-label={t("ledger.allTags")}
-              className="h-9! w-full bg-white"
-            >
-              <SelectValue>
-                {(value) =>
-                  value === "ALL" ? t("ledger.allTags") : `#${String(value)}`
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">{t("ledger.allTags")}</SelectItem>
-              {facetsQuery.data?.tags.map((value) => (
-                <SelectItem key={value} value={value}>
-                  #{value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={tag} onValueChange={(value) => setTag(value ?? "ALL")}>
+              <SelectTrigger
+                aria-label={t("ledger.allTags")}
+                className="h-9! w-full bg-white"
+              >
+                <SelectValue>
+                  {(value) =>
+                    value === "ALL" ? t("ledger.allTags") : `#${String(value)}`
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t("ledger.allTags")}</SelectItem>
+                {facetsQuery.data?.tags.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    #{value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <Button
             type="button"
@@ -491,10 +495,11 @@ export function IncidentList(): React.JSX.Element {
             size="sm"
             onClick={clearFilters}
             disabled={activeFilterCount === 0}
-            className="h-9 justify-center text-slate-600"
+            aria-label={t("ledger.clear")}
+            className="size-9 shrink-0 self-start px-0 text-slate-600"
           >
             <X aria-hidden="true" />
-            {t("ledger.clear")}
+            <span className="sr-only">{t("ledger.clear")}</span>
           </Button>
         </div>
 
