@@ -10,6 +10,13 @@ function isBootstrapAdminEmail(email: string): boolean {
   return email.trim().toLowerCase() === adminEmail;
 }
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+
+export const isGoogleAuthConfigured = Boolean(
+  googleClientId && googleClientSecret,
+);
+
 export const auth = betterAuth({
   database: prismaAdapter(getDb(), {
     provider: "postgresql",
@@ -17,6 +24,21 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
+  },
+  socialProviders: isGoogleAuthConfigured
+    ? {
+        google: {
+          clientId: googleClientId!,
+          clientSecret: googleClientSecret!,
+          prompt: "select_account",
+        },
+      }
+    : undefined,
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    },
   },
   user: {
     additionalFields: {

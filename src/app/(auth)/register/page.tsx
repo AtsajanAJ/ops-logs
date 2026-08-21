@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { RegisterForm } from "@/components/register-form";
+import { isGoogleAuthConfigured } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -28,7 +29,7 @@ export default async function RegisterPage(): Promise<React.JSX.Element> {
           role.
         </p>
       </div>
-      <RegisterForm />
+      <RegisterForm googleEnabled={isGoogleAuthConfigured} />
     </main>
   );
 }

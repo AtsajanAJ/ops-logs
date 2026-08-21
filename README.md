@@ -15,7 +15,10 @@ bun install
 
 Replace `DATABASE_URL` in `.env` with the pooled connection string from Neon.
 Set `BETTER_AUTH_SECRET` (e.g. `openssl rand -base64 32`), `BETTER_AUTH_URL=http://localhost:3000`,
-and `ADMIN_EMAIL` to the email that should become Admin on first register.
+and `ADMIN_EMAIL` to the email that should become Super Admin on first register.
+Optional Google sign-in: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud
+OAuth Web client. Authorized redirect URI must be
+`{BETTER_AUTH_URL}/api/auth/callback/google` (local and production separately).
 To generate weekly drafts, also add a `GEMINI_API_KEY` from Google AI Studio.
 Then run:
 
@@ -31,7 +34,7 @@ Register with `ADMIN_EMAIL` first, then promote teammates under Settings → Use
 - `/summaries` — anonymization review and weekly report drafts
 - `/dashboard` — eight-week volume and severity trends
 - `/settings` — exports, recovery guidance, and (admins) user access
-- `/login`, `/register` — email/password auth (new users start as Visitor)
+- `/login`, `/register` — email/password and optional Google sign-in (new users start as Visitor)
 ## Commands
 
 ```bash
@@ -104,6 +107,7 @@ using the app.
 ## Deploying
 
 Before exposing the app publicly, configure `DATABASE_URL`, `BETTER_AUTH_SECRET`,
-`BETTER_AUTH_URL`, `ADMIN_EMAIL`, and `GEMINI_API_KEY` in Vercel, then run production
+`BETTER_AUTH_URL`, `ADMIN_EMAIL`, and `GEMINI_API_KEY` in Vercel (plus
+`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` if using Google sign-in), then run production
 migrations. Cron automation is still deferred and must never bypass the human
 anonymization review.

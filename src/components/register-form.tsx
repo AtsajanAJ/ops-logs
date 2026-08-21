@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 
+import {
+  AuthMethodDivider,
+  GoogleSignInButton,
+} from "@/components/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +21,11 @@ function RequiredMark(): React.JSX.Element {
   );
 }
 
-export function RegisterForm(): React.JSX.Element {
+export function RegisterForm({
+  googleEnabled = false,
+}: {
+  googleEnabled?: boolean;
+}): React.JSX.Element {
   const router = useRouter();
   const errorId = useId();
   const [error, setError] = useState("");
@@ -90,82 +98,91 @@ export function RegisterForm(): React.JSX.Element {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-      noValidate
-    >
-      <div className="grid gap-2">
-        <Label htmlFor="register-name">
-          Name <RequiredMark />
-        </Label>
-        <Input
-          id="register-name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          required
-          aria-invalid={invalidFields.name || undefined}
-          aria-describedby={error ? errorId : undefined}
-          className="h-11 bg-white"
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="register-email">
-          Email <RequiredMark />
-        </Label>
-        <Input
-          id="register-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          aria-invalid={invalidFields.email || undefined}
-          aria-describedby={error ? errorId : undefined}
-          className="h-11 bg-white"
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="register-password">
-          Password <RequiredMark />
-        </Label>
-        <Input
-          id="register-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          aria-invalid={invalidFields.password || undefined}
-          aria-describedby={error ? errorId : undefined}
-          className="h-11 bg-white"
-        />
-        <p className="text-xs text-slate-500">At least 8 characters.</p>
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="register-confirm-password">
-          Confirm password <RequiredMark />
-        </Label>
-        <Input
-          id="register-confirm-password"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          aria-invalid={invalidFields.confirmPassword || undefined}
-          aria-describedby={error ? errorId : undefined}
-          className="h-11 bg-white"
-        />
-      </div>
-      {error ? (
-        <p id={errorId} className="text-sm text-red-700" role="alert">
-          {error}
-        </p>
+    <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      {googleEnabled ? (
+        <>
+          <GoogleSignInButton label="Continue with Google" />
+          <AuthMethodDivider />
+        </>
       ) : null}
-      <Button type="submit" className="h-11" disabled={pending} aria-busy={pending}>
-        {pending ? "Creating account…" : "Create account"}
-      </Button>
+      <form onSubmit={onSubmit} className="grid gap-4" noValidate>
+        <div className="grid gap-2">
+          <Label htmlFor="register-name">
+            Name <RequiredMark />
+          </Label>
+          <Input
+            id="register-name"
+            name="name"
+            type="text"
+            autoComplete="name"
+            required
+            aria-invalid={invalidFields.name || undefined}
+            aria-describedby={error ? errorId : undefined}
+            className="h-11 bg-white"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="register-email">
+            Email <RequiredMark />
+          </Label>
+          <Input
+            id="register-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            aria-invalid={invalidFields.email || undefined}
+            aria-describedby={error ? errorId : undefined}
+            className="h-11 bg-white"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="register-password">
+            Password <RequiredMark />
+          </Label>
+          <Input
+            id="register-password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            aria-invalid={invalidFields.password || undefined}
+            aria-describedby={error ? errorId : undefined}
+            className="h-11 bg-white"
+          />
+          <p className="text-xs text-slate-500">At least 8 characters.</p>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="register-confirm-password">
+            Confirm password <RequiredMark />
+          </Label>
+          <Input
+            id="register-confirm-password"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            aria-invalid={invalidFields.confirmPassword || undefined}
+            aria-describedby={error ? errorId : undefined}
+            className="h-11 bg-white"
+          />
+        </div>
+        {error ? (
+          <p id={errorId} className="text-sm text-red-700" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <Button
+          type="submit"
+          className="h-11"
+          disabled={pending}
+          aria-busy={pending}
+        >
+          {pending ? "Creating account…" : "Create account"}
+        </Button>
+      </form>
       <p className="text-center text-sm text-slate-600">
         Already have an account?{" "}
         <Link
@@ -175,6 +192,6 @@ export function RegisterForm(): React.JSX.Element {
           Sign in
         </Link>
       </p>
-    </form>
+    </div>
   );
 }

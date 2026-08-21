@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 
+import {
+  AuthMethodDivider,
+  GoogleSignInButton,
+} from "@/components/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +21,11 @@ function RequiredMark(): React.JSX.Element {
   );
 }
 
-export function LoginForm(): React.JSX.Element {
+export function LoginForm({
+  googleEnabled = false,
+}: {
+  googleEnabled?: boolean;
+}): React.JSX.Element {
   const router = useRouter();
   const errorId = useId();
   const [error, setError] = useState("");
@@ -70,50 +78,59 @@ export function LoginForm(): React.JSX.Element {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-      noValidate
-    >
-      <div className="grid gap-2">
-        <Label htmlFor="login-email">
-          Email <RequiredMark />
-        </Label>
-        <Input
-          id="login-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          aria-invalid={invalidFields.email || undefined}
-          aria-describedby={error ? errorId : undefined}
-          className="h-11 bg-white"
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="login-password">
-          Password <RequiredMark />
-        </Label>
-        <Input
-          id="login-password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          minLength={8}
-          aria-invalid={invalidFields.password || undefined}
-          aria-describedby={error ? errorId : undefined}
-          className="h-11 bg-white"
-        />
-      </div>
-      {error ? (
-        <p id={errorId} className="text-sm text-red-700" role="alert">
-          {error}
-        </p>
+    <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      {googleEnabled ? (
+        <>
+          <GoogleSignInButton />
+          <AuthMethodDivider />
+        </>
       ) : null}
-      <Button type="submit" className="h-11" disabled={pending} aria-busy={pending}>
-        {pending ? "Signing in…" : "Sign in"}
-      </Button>
+      <form onSubmit={onSubmit} className="grid gap-4" noValidate>
+        <div className="grid gap-2">
+          <Label htmlFor="login-email">
+            Email <RequiredMark />
+          </Label>
+          <Input
+            id="login-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            aria-invalid={invalidFields.email || undefined}
+            aria-describedby={error ? errorId : undefined}
+            className="h-11 bg-white"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="login-password">
+            Password <RequiredMark />
+          </Label>
+          <Input
+            id="login-password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            minLength={8}
+            aria-invalid={invalidFields.password || undefined}
+            aria-describedby={error ? errorId : undefined}
+            className="h-11 bg-white"
+          />
+        </div>
+        {error ? (
+          <p id={errorId} className="text-sm text-red-700" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <Button
+          type="submit"
+          className="h-11"
+          disabled={pending}
+          aria-busy={pending}
+        >
+          {pending ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
       <p className="text-center text-sm text-slate-600">
         No account yet?{" "}
         <Link
@@ -123,6 +140,6 @@ export function LoginForm(): React.JSX.Element {
           Create an account
         </Link>
       </p>
-    </form>
+    </div>
   );
 }
